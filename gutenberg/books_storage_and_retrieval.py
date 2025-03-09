@@ -271,15 +271,19 @@ def main():
         return
 
     # Print out the results
-    for i, res in enumerate(results['results'], start=1):
-        print(f"\n[Query {i}]: {res['sub_query']}")
-        print("\n[Answer]")
-        print(res["answer"])
-        print("\n[Source Documents]\n")
-        for doc in res["source_documents"]:
-            print("\n[Source]", doc.metadata.get("source"))
-            print("\n[Content]", doc.page_content)
-        print("-" * 70)
+    # Check if results is None or empty
+    if not results:
+        print(f"\nNo results found for query: {query}")
+    else:
+        for i, res in enumerate(results['results'], start=1):
+            print(f"\n[Query {i}]: {res['sub_query']}")
+            print("\n[Answer]")
+            print(res["answer"])
+            print("\n[Source Documents]\n")
+            for doc in res["source_documents"]:
+                print("\n[Source]", doc.metadata.get("source"))
+                print("\n[Content]", doc.page_content)
+            print("-" * 70)
 
 
 if __name__ == "__main__":
