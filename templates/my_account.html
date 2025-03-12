@@ -4,143 +4,148 @@
 
 {% block head %}
 
-  <style>
-    body {
-      font-family: 'Mulish', sans-serif;
-      background-color: #f9f9f9;
-      margin: 0;
-      padding: 0;
-    }
+<style>
+  body {
+    font-family: 'Mulish', sans-serif;
+    background-color: #f9f9f9;
+    margin: 0;
+    padding: 0;
+  }
 
-    .account-container {
-      max-width: 800px;
-      margin: 50px auto;
-      background-color: #ffa6de;
-      /* Pink Background */
-      color: #000;
-      /* Black Text */
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      border-radius: 15px;
-      padding: 30px;
-      text-align: center;
-    }
+  .account-container {
+    max-width: 800px;
+    width: 90%;
+    margin: 50px auto;
+    background-color: #ffa6de;
+    /* Pink Background */
+    color: #000;
+    /* Black Text */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    flex-flow: row wrap;
+  }
 
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 20px;
-      color: #000;
-      /* Black */
-    }
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: #000;
+    /* Black */
+    width: 100%;
+  }
 
-    .profile-details {
-      text-align: left;
-      margin-bottom: 30px;
-    }
+  .profile-details {
+    text-align: center;
+    margin-bottom: 30px;
+    width: 100%;
+  }
 
-    .profile-details p {
-      font-size: 1.2rem;
-      margin: 10px 0;
-      color: #000;
-    }
+  .profile-details p {
+    font-size: 1.2rem;
+    margin: 10px 0;
+    color: #000;
+  }
 
-    .password-form {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+  .password-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 
-    .form-group {
-      width: 100%;
-      margin-bottom: 20px;
-      text-align: left;
-    }
+  .form-group {
+    width: 100%;
+    margin-bottom: 20px;
+    text-align: left;
+  }
 
-    .form-group label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-      color: #000;
-    }
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #000;
+  }
 
-    .form-group input {
-      width: 85%;
-      padding: 20px;
-      border: 1px solid #ccc;
-      border-radius: 50px;
-      font-size: 1rem;
-    }
+  .form-group input {
+    width: 85%;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 50px;
+    font-size: 1rem;
+  }
 
-    .button-group {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-    }
+  .button-group {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
 
-    .update-button,
-    .logout-button {
-      background-color: #000;
-      /* Black Buttons */
-      color: #fff;
-      /* White Text */
-      border: none;
-      padding: 20px;
-      font-size: 1.5rem;
-      border-radius: 50px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      text-decoration: none;
-      /* For anchor buttons */
-    }
+  .update-button,
+  .logout-button {
+    background-color: #000;
+    /* Black Buttons */
+    color: #fff;
+    /* White Text */
+    border: none;
+    padding: 20px;
+    font-size: 1.5rem;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+    /* For anchor buttons */
+  }
 
-    .update-button:hover,
-    .logout-button:hover {
-      background-color: #333;
-      /* Slightly lighter black on hover */
-    }
-  </style>
+  .update-button:hover,
+  .logout-button:hover {
+    background-color: #333;
+    /* Slightly lighter black on hover */
+  }
+</style>
 {% endblock %}
 
+<!-- Add user info conditional statement for the header section -->
 {% block header %}
-      <h1>My Account</h1>
-      <div class="user-info">
-        {% if current_user.is_authenticated %}
-        <a href="{{ url_for('logout') }}">Logout</a>
-        {% else %}
-        <a href="{{ url_for('login') }}">Login</a>
-        <a href="{{ url_for('signup') }}">Sign Up</a>
-        {% endif %}
-      </div>
+<div class="user-info">
+  {% if current_user.is_authenticated %}
+  <a href="{{ url_for('logout') }}">Logout</a>
+  {% else %}
+  <a href="{{ url_for('login') }}">Login</a>
+  <a href="{{ url_for('signup') }}">Sign Up</a>
+  {% endif %}
+</div>
 {% endblock %}
 
 {% block content %}
-    <div class="account-container">
-      <h1>Welcome, {{ user.username }}!</h1>
-      <div class="profile-details">
-        <p><strong>Email:</strong> {{ user.username }}</p>
-      </div>
+<div class="account-container">
+  <h1>Welcome, {{ user.username }}!</h1>
+  <div class="profile-details">
+    <p><strong>Email:</strong> {{ user.email }}</p>
+  </div>
 
-      <!-- Password Update Form -->
-      <form method="POST" class="password-form">
-        <div class="form-group">
-          <label for="current_password">Current Password</label>
-          <input type="password" id="current_password" name="current_password" placeholder="Enter current password"
-            required>
-        </div>
-
-        <div class="form-group">
-          <label for="new_password">New Password</label>
-          <input type="password" id="new_password" name="new_password" placeholder="Enter new password" required>
-        </div>
-
-        <div class="form-group">
-          <label for="confirm_password">Confirm New Password</label>
-          <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm new password"
-            required>
-        </div>
-
-        <div class="button-group">
-          <button type="submit" class="update-button">Update Password</button>
-        </div>
-      </form>
+  <!-- Password Update Form -->
+  <form method="POST" class="password-form">
+    <div class="form-group">
+      <label for="current_password">Current Password</label>
+      <input type="password" id="current_password" name="current_password" placeholder="Enter current password"
+        required>
     </div>
+
+    <div class="form-group">
+      <label for="new_password">New Password</label>
+      <input type="password" id="new_password" name="new_password" placeholder="Enter new password" required>
+    </div>
+
+    <div class="form-group">
+      <label for="confirm_password">Confirm New Password</label>
+      <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm new password" required>
+    </div>
+
+    <div class="button-group">
+      <button type="submit" class="update-button">Update Password</button>
+    </div>
+  </form>
+</div>
 {% endblock %}
