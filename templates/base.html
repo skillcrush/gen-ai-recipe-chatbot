@@ -14,30 +14,33 @@
   <script src="{{ url_for('static', filename='script.js') }}" defer></script>
   <style>
     .flash-messages {
-        position: fixed;
-        bottom: 10px; /* Distance from the bottom of the screen */
-        left: 10px;   /* Distance from the left of the screen */
-        z-index: 1000;
-        width: 300px;
+      position: fixed;
+      bottom: 10px;
+      /* Distance from the bottom of the screen */
+      left: 10px;
+      /* Distance from the left of the screen */
+      z-index: 1000;
+      width: 300px;
     }
 
     .flash {
-        padding: 0.75em;
-        margin-bottom: 0.5em;
-        border-radius: 5px;
-        opacity: 1; /* Initial opacity */
+      padding: 0.75em;
+      margin-bottom: 0.5em;
+      border-radius: 5px;
+      opacity: 1;
+      /* Initial opacity */
     }
 
     .flash.success {
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
     }
 
     .flash.error {
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
     }
   </style>
 
@@ -47,46 +50,48 @@
 </head>
 
 <body>
-    <header class="site-header">
-        <div class="header-content-wrapper">
-          <figure>
-            <a href="{{ url_for('index') }}"><img src="{{ url_for('static', filename='logo.png' ) }}" alt=""
-                class="logo"></a><span class="visually-hidden">Chef
-              Boost</span>
-          </figure>
-          {% block header %}
-            <!-- Additional header content can be added by child templates here -->
-          {% endblock %}
-        </div>
-      </header>
+  <header class="site-header">
+    <div class="header-content-wrapper">
+      <figure>
+        <a href="{{ url_for('index') }}">
+          <img src="{{ url_for('static', filename='logo.png' ) }}" alt="" class="logo">
+          <span class="visually-hidden">ChefBoost</span>
+        </a>
+      </figure>
+      {% block header %}
+      <!-- Additional header content can be added by child templates here -->
+      {% endblock %}
+    </div>
+  </header>
 
-    <!-- Flash messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="flash-messages">
-                {% for category, message in messages %}
-                    <div class="flash {{ category }}">{{ message }}</div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-messages">
+    {% for category, message in messages %}
+    <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
 
-    <!-- Main content -->
-    <main>
-        {% block content %}
-        <!-- Content goes here -->
-        {% endblock %}
-    </main>
-    <script>
-        // Automatically hide flash messages after 10 seconds
-        setTimeout(() => {
-            const flashMessages = document.querySelectorAll('.flash');
-            flashMessages.forEach(message => {
-                message.style.transition = 'opacity 1s ease-out';
-                message.style.opacity = '0';
-                setTimeout(() => message.remove(), 1000); // Remove from DOM after fade-out
-            });
-        }, 10000); // 10 seconds
-    </script>
+  <!-- Main content -->
+  <main>
+    {% block content %}
+    <!-- Content goes here -->
+    {% endblock %}
+  </main>
+  <script>
+    // Automatically hide flash messages after 10 seconds
+    setTimeout(() => {
+      const flashMessages = document.querySelectorAll('.flash');
+      flashMessages.forEach(message => {
+        message.style.transition = 'opacity 1s ease-out';
+        message.style.opacity = '0';
+        setTimeout(() => message.remove(), 1000); // Remove from DOM after fade-out
+      });
+    }, 10000); // 10 seconds
+  </script>
 </body>
+
 </html>
