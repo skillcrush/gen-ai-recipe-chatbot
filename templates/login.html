@@ -3,30 +3,28 @@
 {% block title %}Login | ChefBoost{% endblock %}
 
 {% block header %}
-<h1>Login</h1>
 <div class="user-info">
-  <img src="{{ url_for('static', filename='avatar.png' ) }}" alt="" class="user-image">
   <a href="{{ url_for('signup') }}" class="link-underline">Sign up</a>
 </div>
 {% endblock %}
 
 {% block content %}
 
-    <div class="login-form">
-      <div class="login-content-wrapper">
-        <h2>Log into your account</h2>
-        <form method="POST" class="auth-form-content-wrapper">
-          <div class="form-group">
-            <label for="username">Username</label>
-            <input type="text" id="username" name="username" placeholder="username" required>
-          </div>
-          <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" placeholder="password" required>
-          </div>
-          <button type="submit" class="btn">Get Started</button>
-        </form>
-        </p>
+<div class="login-form">
+  <div class="login-content-wrapper">
+    <h1>Log into your account</h1>
+    <form method="POST" class="auth-form-content-wrapper">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="username" required>
       </div>
-    </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="password" required>
+      </div>
+      <button type="submit" class="btn">Get Started</button>
+    </form>
+    </p>
+  </div>
+</div>
 {% endblock %}
