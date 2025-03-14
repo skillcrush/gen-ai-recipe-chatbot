@@ -674,12 +674,16 @@ def main():
     parser.add_argument("-sd", "--start_date", type=str, default="1950-01-01", help="Search start date.")
     parser.add_argument("-ed", "--end_date", type=str, default="2000-12-31", help="Search end date.")
     parser.add_argument("-q", "--query", type=str, default="Find dessert recipes that combine french and italian cooking.", help="Query for retrieval.")
-    parser.add_argument("-ss", "--use_simlarity_search", type=bool, default=True, help="Use similarity search.")
-    parser.add_argument("-sq", "--use_self_query", type=bool, default=False, help="Use self-query retrieval.")
-    parser.add_argument("-hy", "--use_hyde", type=bool, default=False, help="Use hyde.")
-    parser.add_argument("-mq", "--use_multi_query", type=bool, default=False, help="Use multi-query retrieval.")
+    parser.add_argument("-ss", "--use_similarity_search", action="store_true", help="Use similarity search.")
+    parser.add_argument("-sq", "--use_self_query_retrieval", action="store_true", help="Use self-query retrieval.")
+    parser.add_argument("-hy", "--use_hyde",  action="store_true", help="Use hyde.")
+    parser.add_argument("-mq", "--use_multi_query",  action="store_true", help="Use multi-query retrieval.")
 
     args = parser.parse_args()
+
+    # Set default behavior: use similarity search if neither is specified
+    if not args.use_similarity_search and not args.use_self_query_retrieval:
+        args.use_similarity_search = True
     
     top_n = args.top_n
     start_date = args.start_date
@@ -776,24 +780,28 @@ def main():
     query = args.query
     
     # ================== Decide which retrieval to use ================== #
-    if args.use_self_query:
-        print(f"\nSelf-query retrieval with: {query}")
-        results = perform_self_query_retrieval(query, chat_llm, recipes_vector_store, SupabaseVectorTranslator())
-    elif args.use_simlarity_search:
+    if args.use_similarity_search:
         print(f"\nSimilarity search with: {query}")
         results = perform_similarity_search(query, chat_llm, recipes_vector_store)
+    elif args.use_self_query_retrieval:
+        print(f"\nSelf-query retrieval with: {query}")
+        results = perform_self_query_retrieval(query, chat_llm, recipes_vector_store, SupabaseVectorTranslator())
     elif args.use_multi_query:
         print(f"\nMulti-query retrieval with: {query}")
         results = perform_multi_query_retrieval(query, chat_llm, recipes_vector_store, SupabaseVectorTranslator())
     # =================================================================== #
 
-    for i, res in enumerate(results, start=1):
-        print(f"\n[Result {i}] Recipe: {res['recipe']['text']}")
-        print(f"[Metadata] {res['recipe']['metadata']}")
-        print(f"[Nutrition] {res['nutrition']}")
-        print(f"[Shopping List] {res['shopping_list']}")
-        print(f"[Factoids] {res['factoids']}")
-        print("-" * 70)
+    # Check if results is None or empty
+    if not results:
+        print(f"\nNo results found for query: {query}")
+    else:
+        for i, res in enumerate(results, start=1):
+            print(f"\n[Result {i}] Recipe: {res['recipe']['text']}")
+            print(f"[Metadata] {res['recipe']['metadata']}")
+            print(f"[Nutrition] {res['nutrition']}")
+            print(f"[Shopping List] {res['shopping_list']}")
+            print(f"[Factoids] {res['factoids']}")
+            print("-" * 70)
 
 
 if __name__ == "__main__":
