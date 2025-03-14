@@ -836,7 +836,7 @@ def main():
 
     
     # Set default behavior: use similarity search if neither is specified
-    if not args.use_similarity_search and not args.use_self_query_retrieval and not args.use_multi_query and not args.use_rag_fusion and not args.use_self_query_rag_fusion
+    if not args.use_similarity_search and not args.use_self_query_retrieval and not args.use_multi_query and not args.use_rag_fusion and not args.use_self_query_rag_fusion:
         args.use_similarity_search = True
     
     
