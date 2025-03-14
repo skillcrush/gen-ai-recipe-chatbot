@@ -667,7 +667,7 @@ def main():
     parser.add_argument("-q", "--query", type=str, default="Find dessert recipes that combine french and italian cooking.", help="Query for retrieval.")
     parser.add_argument("-ss", "--use_similarity_search", action="store_true", help="Use similarity search.")
     parser.add_argument("-sq", "--use_self_query_retrieval", action="store_true", help="Use self-query retrieval.")
-    parser.add_argument("-mq", "--use_multi_query", type=bool, default=False, help="Use multi-query retrieval.")
+    parser.add_argument("-mq", "--use_multi_query", action="store_true", help="Use multi-query retrieval.")
 
     args = parser.parse_args()
 
