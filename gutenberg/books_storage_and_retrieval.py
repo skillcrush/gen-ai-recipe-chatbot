@@ -328,7 +328,7 @@ def main():
     args = parser.parse_args()
 
     # Set default behavior: use similarity search if neither is specified
-    if not args.perform_similarity_search and not args.perform_retrieval_qa:
+    if not args.perform_similarity_search and not args.perform_retrieval_qa and not args.perform_rag_step_back_prompting:
         args.perform_similarity_search = True
     
     
