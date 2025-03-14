@@ -310,17 +310,19 @@ def main():
         description="Loading and testing a vector store."
     )
     
-    parser.add_argument("-lb", "--load_books", type=bool, default=False, help="Search and load books.")
+    parser.add_argument("-lb", "--load_books", action="store_true", help="Search and load books.")
     parser.add_argument("-n", "--top_n", type=int, default=3, help="Number of books to load.")
     parser.add_argument("-sd", "--start_date", type=str, default="1950-01-01", help="Search start date.")
     parser.add_argument("-ed", "--end_date", type=str, default="2000-12-31", help="Search end date.")
     parser.add_argument("-q", "--query", type=str, default="Find Poached Eggs Recipes.", help="Query to perform.")
-    parser.add_argument("-ss", "--use_simlarity_search", type=bool, default=True, help="Use similarity search.")
-    parser.add_argument("-sr", "--use_self_query_retrieval", type=bool, default=False, help="Use self query retrieval.")
-    
-    
-    # Parse the arguments
+    parser.add_argument("-ss", "--use_similarity_search", action="store_true", help="Use similarity search.")
+    parser.add_argument("-sq", "--use_self_query_retrieval", action="store_true", help="Use self-query retrieval.")
+
     args = parser.parse_args()
+
+    # Set default behavior: use similarity search if neither is specified
+    if not args.use_similarity_search and not args.use_self_query_retrieval:
+        args.use_similarity_search = True
     
     top_n = args.top_n
     start_date = args.start_date
@@ -401,10 +403,13 @@ def main():
         print(f"\nSelf-query retrieval with: {query}")
         results = perform_self_query_retrieval(query, chat_llm, vector_store)
 
-    for i, res in enumerate(results, start=1):
-        print(f"\n[Result {i}] Recipe: {res['recipe']}")
-        print(f"[Metadata] {res['metadata']}")
-        print("-" * 70)
+    if not results:
+        print(f"\nNo results found for query: {query}")
+    else:
+        for i, res in enumerate(results, start=1):
+            print(f"\n[Result {i}] Recipe: {res['recipe']}")
+            print(f"[Metadata] {res['metadata']}")
+            print("-" * 70)
 
 
 if __name__ == "__main__":

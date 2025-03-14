@@ -314,18 +314,22 @@ def main():
         description="Loading and testing a vector store."
     )
     
-    parser.add_argument("-lb", "--load_books", type=bool, default=False, help="Search and load books.")
+    parser.add_argument("-lb", "--load_books", action="store_true", help="Search and load books.")
     parser.add_argument("-n", "--top_n", type=int, default=3, help="Number of books to load.")
     parser.add_argument("-sd", "--start_date", type=str, default="1950-01-01", help="Search start date.")
     parser.add_argument("-ed", "--end_date", type=str, default="2000-12-31", help="Search end date.")
     parser.add_argument("-q", "--query", type=str, default="How to make a sponge cake with fruit flavor?", help="Query for retrieval.")
-    parser.add_argument("-ss", "--perform_similarity_search", type=bool, default=False, help="Perform similarity search.")
-    parser.add_argument("-rq", "--perform_retrieval_qa", type=bool, default=False, help="Perform retrieval QA.")
-    parser.add_argument("-rdsb", "--perform_rag_step_back_prompting", type=bool, default=True, help="Perform RAG with step-back prompting.")
+    parser.add_argument("-ss", "--perform_similarity_search", action="store_true", help="Perform similarity search.")
+    parser.add_argument("-rq", "--perform_retrieval_qa", action="store_true", help="Perform retrieval QA.")
+    parser.add_argument("-rdsb", "--perform_rag_step_back_prompting", action="store_true", help="Perform RAG with step-back prompting.")
 
 
     # Parse the arguments
     args = parser.parse_args()
+
+    # Set default behavior: use similarity search if neither is specified
+    if not args.perform_similarity_search and not args.perform_retrieval_qa and not args.perform_rag_step_back_prompting:
+        args.perform_similarity_search = True
     
     top_n = args.top_n
     start_date = args.start_date
@@ -401,15 +405,18 @@ def main():
         return
 
     # Print out the results
-    for i, res in enumerate(results['results'], start=1):
-        print(f"\n[Query {i}]: {res['sub_query']}")
-        print("\n[Answer]")
-        print(res["answer"])
-        print("\n[Source Documents]\n")
-        for doc in res["source_documents"]:
-            print("\n[Source]", doc.metadata.get("source"))
-            print("\n[Content]", doc.page_content)
-        print("-" * 70)
+    if not results:
+        print(f"\nNo results found for query: {query}")
+    else:
+        for i, res in enumerate(results['results'], start=1):
+            print(f"\n[Query {i}]: {res['sub_query']}")
+            print("\n[Answer]")
+            print(res["answer"])
+            print("\n[Source Documents]\n")
+            for doc in res["source_documents"]:
+                print("\n[Source]", doc.metadata.get("source"))
+                print("\n[Content]", doc.page_content)
+            print("-" * 70)
 
 
 if __name__ == "__main__":
