@@ -672,7 +672,7 @@ def main():
     args = parser.parse_args()
 
     # Set default behavior: use similarity search if neither is specified
-    if not args.use_similarity_search and not args.use_self_query_retrieval:
+    if not args.use_similarity_search and not args.use_self_query_retrieval and not args.use_multi_query:
         args.use_similarity_search = True
     
     top_n = args.top_n
