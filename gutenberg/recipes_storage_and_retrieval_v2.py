@@ -819,20 +819,26 @@ def main():
         description="Loading and testing a vector store."
     )
     
-    parser.add_argument("-lb", "--load_books", type=bool, default=False, help="Search and load books.")
+    parser.add_argument("-lb", "--load_books",  action="store_true", help="Search and load books.")
     parser.add_argument("-n", "--top_n", type=int, default=3, help="Number of books to load.")
     parser.add_argument("-sd", "--start_date", type=str, default="1950-01-01", help="Search start date.")
     parser.add_argument("-ed", "--end_date", type=str, default="2000-12-31", help="Search end date.")
-    parser.add_argument("-q", "--query", type=str, default="How to make a sponge cake with fruit flavor?", help="Query for retrieval.")
-    parser.add_argument("-ss", "--use_simlarity_search", type=bool, default=True, help="Use similarity search.")
-    parser.add_argument("-sq", "--use_self_query", type=bool, default=False, help="Use self-query retrieval.")
-    parser.add_argument("-hy", "--use_hyde", type=bool, default=False, help="Use hyde.")
-    parser.add_argument("-mq", "--use_multi_query", type=bool, default=False, help="Use multi-query retrieval.")
-    parser.add_argument("-rf", "--use_rag_fusion", type=bool, default=False, help="Use RAG Fusion retrieval.")
-    parser.add_argument("-sqrf", "--use_self_query_rag_fusion", type=bool, default=False, help="Combine self-query and RAG fusion.")
+    parser.add_argument("-q", "--query", type=str, default="Find dessert recipes that combine french and italian cooking.", help="Query for retrieval.")
+    parser.add_argument("-ss", "--use_similarity_search", action="store_true", help="Use similarity search.")
+    parser.add_argument("-sq", "--use_self_query_retrieval", action="store_true", help="Use self-query retrieval.")
+    parser.add_argument("-hy", "--use_hyde",  action="store_true", help="Use hyde.")
+    parser.add_argument("-mq", "--use_multi_query",  action="store_true", help="Use multi-query retrieval.")
+    parser.add_argument("-rf", "--use_rag_fusion",  action="store_true", help="Use RAG Fusion retrieval.")
+    parser.add_argument("-sqrf", "--use_self_query_rag_fusion",  action="store_true", help="Combine self-query and RAG fusion.")
 
 
     args = parser.parse_args()
+
+    
+    # Set default behavior: use similarity search if neither is specified
+    if not args.use_similarity_search and not args.use_self_query_retrieval and not args.use_multi_query and not args.use_rag_fusion and not args.use_self_query_rag_fusion
+        args.use_similarity_search = True
+    
     
     top_n = args.top_n
     start_date = args.start_date
@@ -929,12 +935,12 @@ def main():
     query = args.query
     
     # ================== Decide which retrieval to use ================== #
-    if args.use_self_query:
-        print(f"\nSelf-query retrieval with: {query}")
-        results = perform_self_query_retrieval(query, chat_llm, recipes_vector_store, SupabaseVectorTranslator())
-    elif args.use_simlarity_search:
+    if args.use_similarity_search:
         print(f"\nSimilarity search with: {query}")
         results = perform_similarity_search(query, chat_llm, recipes_vector_store)
+    elif args.use_self_query_retrieval:
+        print(f"\nSelf-query retrieval with: {query}")
+        results = perform_self_query_retrieval(query, chat_llm, recipes_vector_store, SupabaseVectorTranslator())
     elif args.use_multi_query:
         print(f"\nMulti-query retrieval with: {query}")
         results = perform_multi_query_retrieval(query, chat_llm, recipes_vector_store, SupabaseVectorTranslator())
@@ -953,13 +959,16 @@ def main():
         )
     # =================================================================== #
 
-    for i, res in enumerate(results, start=1):
-        print(f"\n[Result {i}] Recipe: {res['recipe']['text']}")
-        print(f"[Metadata] {res['recipe']['metadata']}")
-        print(f"[Nutrition] {res['nutrition']}")
-        print(f"[Shopping List] {res['shopping_list']}")
-        print(f"[Factoids] {res['factoids']}")
-        print("-" * 70)
+    if not results:
+        print(f"\nNo results found for query: {query}")
+    else:
+        for i, res in enumerate(results, start=1):
+            print(f"\n[Result {i}] Recipe: {res['recipe']['text']}")
+            print(f"[Metadata] {res['recipe']['metadata']}")
+            print(f"[Nutrition] {res['nutrition']}")
+            print(f"[Shopping List] {res['shopping_list']}")
+            print(f"[Factoids] {res['factoids']}")
+            print("-" * 70)
 
 
 if __name__ == "__main__":
