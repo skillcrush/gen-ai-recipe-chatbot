@@ -14,6 +14,7 @@
 
   .account-container {
     max-width: 800px;
+    width: 90%;
     margin: 50px auto;
     background-color: #ffa6de;
     /* Pink Background */
@@ -23,6 +24,9 @@
     border-radius: 15px;
     padding: 30px;
     text-align: center;
+    display: flex;
+    justify-content: center;
+    flex-flow: row wrap;
   }
 
   h1 {
@@ -30,11 +34,13 @@
     margin-bottom: 20px;
     color: #000;
     /* Black */
+    width: 100%;
   }
 
   .profile-details {
-    text-align: left;
+    text-align: center;
     margin-bottom: 30px;
+    width: 100%;
   }
 
   .profile-details p {
@@ -100,6 +106,7 @@
 </style>
 {% endblock %}
 
+<!-- Add user info conditional statement for the header section -->
 {% block header %}
 <div class="user-info">
   {% if current_user.is_authenticated %}
