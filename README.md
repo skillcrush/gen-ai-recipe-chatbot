@@ -51,10 +51,10 @@ On Windows:
 ## Example of running a file using a CLI built with argparse: books_storage_and_retrieval.py file:
 
 On a Mac:
-`python3 pg_store_texts_and_test.py -lb True`
+`python3 books_storage_and_retrieval.py -lb True`
 
 On Windows:
-`python pg_store_texts_and_test.py  -lb True`
+`python books_storage_and_retrieval.py  -lb True`
 
 <br>
 The app will run at: http://127.0.0.1:5000/

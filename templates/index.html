@@ -170,6 +170,16 @@
     <section class="chatbot-header">
       <div class="chatbot-content-wrapper">
         <h2>👋 ChefBoost!</h2>
+        <div class="open-close-icons">
+          <button type="button">
+            <img src="{{ url_for('static', filename='open-icon.png' ) }}" alt="" class="logo">
+            <span class="visually-hidden">open modal</span>
+          </button>
+          <button type="button">
+            <img src="{{ url_for('static', filename='close-icon.png' ) }}" alt="" class="logo">
+            <span class="visually-hidden">close modal</span>
+          </button>
+        </div>
       </div>
     </section>
 
