@@ -3,149 +3,163 @@
 {% block title %}ChefBoost{% endblock %}
 
 {% block head %}
-  <!-- Marked for Markdown parsing -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- Marked for Markdown parsing -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-  <style>
-    /* Basic styling for chat messages */
-    .messages {
-      max-height: 60vh;       /* Allow scrolling if needed */
-      overflow-y: auto;       /* Vertical scrollbar if content exceeds 60vh */
-      /* margin: 1rem 0; */
-      padding: 1rem;
-      background: #fafafa;
-      border-radius: 4px;
-    }
-    .assistant-message, .user-message {
-      margin: 0.5rem 0;
-      padding: 0.75rem;
-      border-radius: 4px;
-      line-height: 1.4;
-    }
-    .assistant-message {
-      background: #f7f7f7;
-    }
-    .user-message {
-      background: #d0ebff;
-      text-align: right;
+<style>
+  /* Basic styling for chat messages */
+  .messages {
+    max-height: 60vh;
+    /* Allow scrolling if needed */
+    overflow-y: auto;
+    /* Vertical scrollbar if content exceeds 60vh */
+    /* margin: 1rem 0; */
+    padding: 1rem;
+    background: #fafafa;
+    border-radius: 4px;
+  }
+
+  .assistant-message,
+  .user-message {
+    margin: 0.5rem 0;
+    padding: 0.75rem;
+    border-radius: 4px;
+    line-height: 1.4;
+  }
+
+  .assistant-message {
+    background: #f7f7f7;
+  }
+
+  .user-message {
+    background: #d0ebff;
+    text-align: right;
+  }
+
+  /* Spinner styling */
+  .spinner {
+    /* A simple rotating circle */
+    border: 6px solid #ddd;
+    border-top: 6px solid #3498db;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+    /* center horizontally within its container */
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
     }
 
-    /* Spinner styling */
-    .spinner {
-      /* A simple rotating circle */
-      border: 6px solid #ddd;
-      border-top: 6px solid #3498db;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto; /* center horizontally within its container */
+    100% {
+      transform: rotate(360deg);
     }
-    @keyframes spin {
-      0%   { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
+  }
+</style>
 
-  <script>
-    function sendQuery() {
-      const queryInput = document.getElementById("query");
-      const query = queryInput.value.trim();
-      if (!query) return;
+<script>
+  function sendQuery() {
+    const queryInput = document.getElementById("query");
+    const query = queryInput.value.trim();
+    if (!query) return;
 
-      const chatWindow = document.getElementById("chat-window");
+    const chatWindow = document.getElementById("chat-window");
 
-      // Append user’s message
-      chatWindow.innerHTML += `
+    // Append user’s message
+    chatWindow.innerHTML += `
         <div class="user-message">
           ${query}
         </div>
       `;
-      queryInput.value = "";
+    queryInput.value = "";
 
-      // -------------------
-      // 1) Insert the spinner as a temporary assistant message
-      // -------------------
-      const spinnerId = "assistant-spinner-" + Date.now();
-      chatWindow.innerHTML += `
+    // -------------------
+    // 1) Insert the spinner as a temporary assistant message
+    // -------------------
+    const spinnerId = "assistant-spinner-" + Date.now();
+    chatWindow.innerHTML += `
         <div class="assistant-message" id="${spinnerId}">
           <div class="spinner"></div>
         </div>
       `;
-      chatWindow.scrollTop = chatWindow.scrollHeight; // auto-scroll
+    chatWindow.scrollTop = chatWindow.scrollHeight; // auto-scroll
 
-      // Prepare variables for streaming
-      let partialResponse = "";         // accumulate chunks here
-      let isFirstChunk = true;         // track the first chunk to remove spinner
-      let assistantResponseEl = null;  // the final assistant message DOM
+    // Prepare variables for streaming
+    let partialResponse = "";         // accumulate chunks here
+    let isFirstChunk = true;         // track the first chunk to remove spinner
+    let assistantResponseEl = null;  // the final assistant message DOM
 
-      // Open SSE connection
-      const eventSource = new EventSource(`/stream?query=${encodeURIComponent(query)}`);
+    // Open SSE connection
+    const eventSource = new EventSource(`/stream?query=${encodeURIComponent(query)}`);
 
-      eventSource.onmessage = (event) => {
-        const rawData = event.data;
+    eventSource.onmessage = (event) => {
+      const rawData = event.data;
 
-        if (rawData === "[DONE]") {
-          // All chunks received. Close stream and stop the spinner
-          eventSource.close();
-          return;
-        }
+      if (rawData === "[DONE]") {
+        // All chunks received. Close stream and stop the spinner
+        eventSource.close();
+        return;
+      }
 
-        // -------------------
-        // 2) On first chunk, remove the spinner block & create a new "assistant-message"
-        // -------------------
-        if (isFirstChunk) {
-          isFirstChunk = false;
+      // -------------------
+      // 2) On first chunk, remove the spinner block & create a new "assistant-message"
+      // -------------------
+      if (isFirstChunk) {
+        isFirstChunk = false;
 
-          // Remove the spinner element
-          const spinnerEl = document.getElementById(spinnerId);
-          if (spinnerEl) spinnerEl.remove();
-
-          // Create a new assistant message DOM for streamed content
-          assistantResponseEl = document.createElement("div");
-          assistantResponseEl.classList.add("assistant-message");
-          chatWindow.appendChild(assistantResponseEl);
-        }
-
-        // Try to parse as JSON if your server escapes the text, otherwise use as-is
-        let chunk;
-        try {
-          chunk = JSON.parse(rawData);
-        } catch {
-          chunk = rawData;
-        }
-
-        // Append chunk to partialResponse
-        partialResponse += chunk;
-
-        // Convert partialResponse (Markdown) to HTML
-        const html = marked.parse(partialResponse);
-
-        // Update the assistant message with rendered Markdown
-        assistantResponseEl.innerHTML = html;
-
-        // Auto-scroll to bottom
-        chatWindow.scrollTop = chatWindow.scrollHeight;
-      };
-
-      eventSource.onerror = () => {
-        // On error, remove spinner if it’s still there
+        // Remove the spinner element
         const spinnerEl = document.getElementById(spinnerId);
         if (spinnerEl) spinnerEl.remove();
 
-        // Optionally append an error message
-        chatWindow.innerHTML += `
+        // Create a new assistant message DOM for streamed content
+        assistantResponseEl = document.createElement("div");
+        assistantResponseEl.classList.add("assistant-message");
+        chatWindow.appendChild(assistantResponseEl);
+      }
+
+      // Try to parse as JSON if your server escapes the text, otherwise use as-is
+      let chunk;
+      try {
+        chunk = JSON.parse(rawData);
+      } catch {
+        chunk = rawData;
+      }
+
+      // Append chunk to partialResponse
+      partialResponse += chunk;
+
+      // Convert partialResponse (Markdown) to HTML
+      const html = marked.parse(partialResponse);
+
+      // Update the assistant message with rendered Markdown
+      assistantResponseEl.innerHTML = html;
+
+      // Auto-scroll to bottom
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    };
+
+    eventSource.onerror = () => {
+      // On error, remove spinner if it’s still there
+      const spinnerEl = document.getElementById(spinnerId);
+      if (spinnerEl) spinnerEl.remove();
+
+      // Optionally append an error message
+      chatWindow.innerHTML += `
           <div class="assistant-message">
             Error occurred while streaming data.
           </div>
         `;
 
-        eventSource.close();
-      };
-    }
-  </script>
+      eventSource.close();
+    };
+  }
+</script>
 {% endblock %}
 
+<!-- Add user info conditional statement for the header section -->
 {% block header %}
 <div class="user-info">
   {% if current_user.is_authenticated %}
@@ -162,31 +176,42 @@
 {% endblock %}
 
 {% block content %}
-    <div class="main-content-wrapper">
-      <div class="chat-container">
-        <section class="chatbot-header">
-          <div class="chatbot-content-wrapper">
-            <h2>👋 ChefBoost!</h2>
-          </div>
-        </section>
-
-        <!-- Scrollable container for chat messages -->
-        <section class="messages" id="chat-window">
-          <!-- SSE messages get appended here -->
-        </section>
-
-        <section class="message-input-container">
-          <div class="chatbot-content-wrapper">
-            <form class="message-form" onsubmit="event.preventDefault(); sendQuery();">
-              <div class="input-wrapper">
-                <textarea id="query" placeholder="Ask ChefBoost..." autofocus required></textarea>
-                <button type="submit" id="send-btn">
-                  <img src="{{ url_for('static', filename='send-icon.png') }}" alt="Send" class="send-icon">
-                </button>
-              </div>
-            </form>
-          </div>
-        </section>
+<div class="main-content-wrapper">
+  <div class="chat-container">
+    <section class="chatbot-header">
+      <div class="chatbot-content-wrapper">
+        <h2>👋 ChefBoost!</h2>
+        <div class="open-close-icons">
+          <button type="button">
+            <img src="{{ url_for('static', filename='open-icon.png' ) }}" alt="" class="logo">
+            <span class="visually-hidden">open modal</span>
+          </button>
+          <button type="button">
+            <img src="{{ url_for('static', filename='close-icon.png' ) }}" alt="" class="logo">
+            <span class="visually-hidden">close modal</span>
+          </button>
+        </div>
       </div>
-    </div>
+    </section>
+
+    <!-- Scrollable container for chat messages -->
+    <section class="messages" id="chat-window">
+      <!-- SSE messages get appended here -->
+    </section>
+
+    <section class="message-input-container">
+      <div class="chatbot-content-wrapper">
+        <form class="message-form" onsubmit="event.preventDefault(); sendQuery();">
+          <div class="input-wrapper">
+            <textarea id="query" placeholder="Ask ChefBoost..." autofocus required></textarea>
+            <button type="submit" id="send-btn">
+              <img src="{{ url_for('static', filename='send-icon.png') }}" alt="Send" class="send-icon">
+              <span class="visually-hidden">Send prompt</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
 {% endblock %}
