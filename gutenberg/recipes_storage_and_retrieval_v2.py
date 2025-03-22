@@ -319,53 +319,7 @@ def extract_all_recipes_with_context(book_text: str, oversample=1):
 # LLM-BASED RECIPE PARSING (Single Call for Full Metadata)
 ###############################################################################
 
-def extract_recipe_info(chunk_text: str, llm: ChatOpenAI) -> dict:
-    """
-    Single call to the LLM that extracts:
-      - recipe_found (bool)
-      - title (str)
-      - ingredients (list of str)
-      - instructions (str)
-      - recipe_type, cuisine, special_considerations
-    """
-    system_prompt = (
-        "You are a helpful assistant that identifies and extracts recipes from text. "
-        "Return your answer in valid JSON. If no recipe is present, return "
-        '{"recipe_found": false}.\n\n'
-        "If a recipe is found, return a JSON object with:\n"
-        "{\n"
-        '  "recipe_found": true,\n'
-        '  "title": "STRING",\n'
-        '  "ingredients": ["LIST OF INGREDIENTS" (lowercase, no quantities)],\n'
-        '  "instructions": "STRING with instructions",\n'
-        f'  "recipe_type": "STRING or LIST from {RECIPE_TYPE}",\n'
-        f'  "cuisine": "STRING from {CUISINE}",\n'
-        f'  "special_considerations": "STRING or LIST from {SPECIAL_CONSIDERATIONS}"\n'
-        "}\n\n"
-        "Output must be valid JSON."
-    )
-
-    user_prompt = (
-        f"Text chunk:\n{chunk_text}\n\n"
-        "Does this text contain a recipe? If yes, extract the JSON data above. "
-        "If no recipe is present, return {\"recipe_found\": false}."
-    )
-
-    try:
-        messages = [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=user_prompt),
-        ]
-        response: AIMessage = llm.invoke(messages)
-        reply = response.content.strip()
-        recipe_data = json.loads(reply)
-        print(f"\nChunk: {chunk_text}")
-        print("\n************\n")
-        print(f"LLM reply: {recipe_data} \n")
-        return recipe_data
-    except Exception as e:
-        print(f"LLM parsing error: {e}")
-        return {"recipe_found": False}
+# TODO: Define the extract_recipe_info function to extract add more metadata fields
 
 
 ###############################################################################
@@ -465,90 +419,17 @@ def download_and_store_books(matching_books, cache, llm, vector_store, oversampl
 # BASELINE SIMILARITY SEARCH (SINGLE-QUERY)
 ###############################################################################
 
-def perform_similarity_search(query, llm, vector_store):
-    """
-    Perform similarity search using LangChain.
-    """
-    recipes = vector_store.similarity_search(query)
-
-    return build_outputs(recipes, llm)
+# TODO: Perform a vector-based similarity search using LangChain
 
 
 ###############################################################################
 # SELF-QUERY RETRIEVER
 ###############################################################################
 
-def build_self_query_retriever(llm, vector_store, structured_query_translator):
-    metadata_field_info = [
-        AttributeInfo(
-            name="recipe_title",
-            description="The title of the recipe. Use the like operator for partial matches.",
-            type="string",
-        ),
-        AttributeInfo(
-            name="recipe_type",
-            description=f"The type of recipe (e.g., {RECIPE_TYPE}).",
-            type="string",
-        ),
-        AttributeInfo(
-            name="cuisine",
-            description=f"The cuisine type (e.g., {CUISINE}). Use like operator for partial matches.",
-            type="string",
-        ),
-        AttributeInfo(
-            name="special_considerations",
-            description=f"Dietary restrictions (e.g., {SPECIAL_CONSIDERATIONS}). Use like operator for partial matches.",
-            type="list[string]",
-        ),
-        AttributeInfo(
-            name="ingredients",
-            description=f"Key ingredients (e.g., {COMMON_INGREDIENTS}). Use like operator for partial matches.",
-            type="list[string]",
-        ),
-    ]
+# TODO: Define the build_ a self-query retriever to build a query constructor
 
-    doc_content_desc = "Text content describing a cooking recipe"
-    examples = [
-        (
-            "Show me all American dessert recipes but not vegetarian.",
-            {
-                "query": "American dessert",
-                "filter": """and(
-                                eq("cuisine", 'american'), 
-                                eq("recipe_type", 'dessert'), 
-                                ne("special_considerations", 'vegetarian')
-                            )"""
-            }
-        ),
-        # add more examples...
-    ]
 
-    prompt = get_query_constructor_prompt(
-        doc_content_desc,
-        metadata_field_info,
-        examples=examples
-    )
-
-    output_parser = StructuredQueryOutputParser.from_components()
-    query_constructor = prompt | llm | output_parser
-
-    sq_retriever = SelfQueryRetriever(
-        query_constructor=query_constructor,
-        vectorstore=vector_store,
-        structured_query_translator=structured_query_translator,
-    )
-
-    return sq_retriever
-
-def perform_self_query_retrieval(query, llm, vector_store, structured_query_translator):
-    """
-    Creates a SelfQueryRetriever for metadata fields about recipes.
-    """
-    retriever = build_self_query_retriever(llm, vector_store, structured_query_translator)
-
-    recipes = retriever.invoke(query)
-
-    return build_outputs(recipes, llm)
+# TODO: Define a perform_self_query_retrieval function to create a SelfQueryRetriever and Perform a self-query retrieval using LangChain
 
 
 def build_outputs(results, llm):
@@ -582,10 +463,9 @@ def main():
     
     # Parse the arguments
     args = parser.parse_args()
-    
+        
+    # TODO: Add conditional statement to run the use_similarity_search function if no flag is specified
     # Set default behavior: use similarity search if neither is specified
-    if not args.use_similarity_search and not args.use_self_query_retrieval:
-        args.use_similarity_search = True
     
     top_n = args.top_n
     start_date = args.start_date

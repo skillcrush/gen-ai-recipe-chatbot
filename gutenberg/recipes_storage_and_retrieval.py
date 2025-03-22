@@ -85,92 +85,11 @@ def search_gutenberg_titles(cache, keywords, top_n=10, start_date=None, end_date
     return matching_books
 
 
-def extract_metadata_nlp(content):
-    """
-    Use NLP to extract recipe-related metadata from the text content, including a focused list of ingredients.
-    """
-    # Tokenize and process text with spaCy
-    doc = nlp(content)
-
-    # Extract nouns and proper nouns (potential ingredients)
-    possible_ingredients = [
-        token.text.lower() for token in doc
-        if token.pos_ in {"NOUN", "PROPN"} and token.is_alpha
-    ]
-
-    # Filter using the predefined ingredients list
-    ingredients = [ingredient for ingredient in possible_ingredients if ingredient in COMMON_INGREDIENTS]
-
-    # Deduplicate and sort the list of ingredients
-    ingredients = sorted(set(ingredients))
-
-    metadata = {
-        "recipe_type": list(set(word for word in content.lower().split() if word in RECIPE_TYPE)),
-        "cuisine": list(set(word for word in content.lower().split() if word in CUISINE)),
-        "special_considerations": list(set(word for word in content.lower().split() if word in SPECIAL_CONSIDERATIONS)),
-        "ingredients": ingredients
-    }
-    return metadata
+# TODO: Define the extract_metadata_nlp function to implement the heuristic-based for NLP metadata extraction
 
 
-def construct_metadata(gutenberg_book_id, cache):
-    """
-    Build minimal metadata from Gutenberg's cache to attach to each recipe.
-    """
-    query = f"""
-        SELECT 
-            b.gutenbergbookid AS gutenbergbookid,
-            b.dateissued AS dateissued, 
-            t.name AS title, 
-            GROUP_CONCAT(a.name, '# ') AS authors,
-            GROUP_CONCAT(s.name, '# ') AS subjects
-        FROM books b
-        LEFT JOIN titles t ON b.id = t.bookid
-        LEFT JOIN book_authors ba ON b.id = ba.bookid
-        LEFT JOIN authors a ON ba.authorid = a.id
-        LEFT JOIN book_subjects bs ON b.id = bs.bookid
-        LEFT JOIN subjects s ON bs.subjectid = s.id
-        WHERE b.gutenbergbookid = {gutenberg_book_id}
-        GROUP BY b.id, t.name;
-    """
-    cursor = cache.native_query(query)
+# TODO: Define the construct_metadata function to build a metadata dictionary for each recipe
 
-    # Handle the cursor result correctly
-    result = None
-    for row in cursor:
-        result = row  # Assuming one row is returned per book_id
-
-    # Ensure result exists
-    if not result:
-        print(f"No metadata found for book ID {gutenberg_book_id}.")
-        return {
-            "gutenberg_id": gutenberg_book_id,
-            "source": "Unknown",
-            "authors": [],
-            "subjects": []
-        }
-
-    gutenberg_id, dateissued, title, authors, subjects = result
-    if authors is None:
-        authors = "Unknown"
-    if subjects is None:
-        subjects = "Unknown"
-
-    # Download book content
-    raw_text = get_text_by_id(gutenberg_book_id)
-    content = raw_text.decode("utf-8", errors="ignore") if raw_text else ""
-
-    # Extract metadata using NLP
-    nlp_metadata = extract_metadata_nlp(content)
-
-    return {
-        "gutenberg_id": gutenberg_id,
-        "date_issued": dateissued,
-        "source": title, # Key must be 'source' for LangChain
-        "authors": authors.split("# ") if authors else [],
-        "subjects": subjects.split("# ") if subjects else [],
-        **nlp_metadata
-    }
 
 ###############################################################################
 # DOWNLOAD, EXTRACT, & STORE
@@ -224,82 +143,18 @@ def download_and_store_books(matching_books, cache, vector_store):
 # BASELINE SIMILARITY SEARCH (SINGLE-QUERY)
 ###############################################################################
 
-def perform_similarity_search(query, llm, vector_store):
-    """
-    Perform retrieval with a single query.
-    """
-    recipes = vector_store.similarity_search(query)
+# TODO: Perform a vector-based similarity search
 
-    return build_outputs(recipes, llm)
 
 ###############################################################################
 # SELF-QUERY RETRIEVER
 ###############################################################################
 
-def perform_self_query_retrieval(query, llm, vector_store):
-    """
-    Creates a SelfQueryRetriever for the following metadata fields:
-      - recipe_title
-      - recipe_type
-      - cuisine
-      - special_considerations
-      - ingredients
-    """
+# TODO: Perform a self-query retrieval
 
-    metadata_field_info = [
-        AttributeInfo(
-            name="recipe_title",
-            description="The title of the recipe. Use the like operator for partial matches.",
-            type="string",
-        ),
-        AttributeInfo(
-            name="recipe_type",
-            description=f"The type of recipe (e.g., {RECIPE_TYPE}).",
-            type="string",
-        ),
-        AttributeInfo(
-            name="cuisine",
-            description=f"The cuisine type (e.g., {CUISINE}). Use the like operator for partial matches.",
-            type="string",
-        ),
-        AttributeInfo(
-            name="special_considerations",
-            description=f"Dietary restrictions (e.g., {SPECIAL_CONSIDERATIONS}). Use the like operator for partial matches.",
-            type="list[string]",
-        ),
-        AttributeInfo(
-            name="ingredients",
-            description=f"Key ingredients in the recipe (e.g., {COMMON_INGREDIENTS}). Use the like operator for partial matches.",
-            type="list[string]",
-        ),
-    ]
 
-    doc_content_desc = "Text content describing a cooking recipe"
-    document_contents = "The text content of a cooking recipe, including its ingredients, instructions, and relevant metadata."
+# TODO: Define a function named build_outputs to create a standard output format from the data returned by the similarity search and self-query retrieval functions
 
-    retriever = SelfQueryRetriever.from_llm(
-        llm,
-        vector_store,
-        doc_content_desc,
-        metadata_field_info,
-        verbose=True
-    )
-
-    results = retriever.invoke(query)
-
-    return build_outputs(results, llm)
-
-def build_outputs(results, llm):
-    outputs = []
-
-    for i, res in enumerate(results, start=1):
-        processed_output = {
-            "recipe": res.page_content,
-            "metadata": res.metadata
-        }
-        outputs.append(processed_output)
-
-    return outputs
 
 ###############################################################################
 # MAIN
@@ -321,9 +176,9 @@ def main():
     # Parse the arguments
     args = parser.parse_args()
     
+    # TODO: Add conditional statement to run the use_similarity_search function if no flag is specified
     # Set default behavior: use similarity search if neither is specified
-    if not args.use_similarity_search and not args.use_self_query_retrieval:
-        args.use_similarity_search = True
+
 
     top_n = args.top_n
     start_date = args.start_date
