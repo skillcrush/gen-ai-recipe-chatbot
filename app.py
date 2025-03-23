@@ -224,49 +224,43 @@ def stream():
     inputs = {"messages": [("user", request.args.get("query", ""))]}
     config = {"configurable": {"thread_id": "thread-1"}}
 
-    HEARTBEAT_INTERVAL = 5
-
     @stream_with_context
     def generate():
-        stream_iterator = graph.stream(inputs, config, stream_mode="values")
-        last_sent_time = time.time()
-
-        while True:
-            # Check if we've been idle too long
-            if time.time() - last_sent_time > HEARTBEAT_INTERVAL:
-                # Send a heartbeat
-                yield "data: [heartbeat]\n\n"
-                last_sent_time = time.time()
-
-            try:
-                step = next(stream_iterator)
-            except StopIteration:
-                # No more data from the agent
-                break
-            except Exception as e:
-                # On any exception, report it and stop
-                yield f"data: Error: {str(e)}\n\n"
-                return
-
-            # We got a new message from the agent
-            message = step["messages"][-1]
-            if isinstance(message, tuple):
-                pass
-                # yield f"data: {message[1]}\n\n" # Uncomment to allow for user messages to be displayed
-            else:
-                if message.response_metadata.get("finish_reason") == "stop":
-                    escaped_message = json.dumps(message.content)
-                    yield f"data: {escaped_message}\n\n"
+        stream_iterator = graph.stream(inputs, config, stream_mode="messages")
+        current_node = None
+        current_output = ""
+        try:
+            while True:
+                try:
+                    msg, metadata = next(stream_iterator)
+                except StopIteration:
                     break
-            last_sent_time = time.time()
 
-        # Final marker
+                node = metadata.get("langgraph_node")
+                # If we detect a change in the node, assume previous output was intermediate.
+                if current_node is None:
+                    current_node = node
+                elif node != current_node:
+                    current_node = node
+                    current_output = ""  # reset accumulator for new node
+
+                if msg.content:
+                    current_output += msg.content
+
+                # Once we get a finish signal for the current node, we break out.
+                if metadata.get("finish_reason") == "stop":
+                    break
+        except GeneratorExit:
+            return  # client disconnected
+        except Exception as e:
+            yield f"data: Error: {str(e)}\n\n"
+            return
+
+        # Yield only the final aggregated output from the last node.
+        yield f"data: {json.dumps(current_output)}\n\n"
         yield "data: [DONE]\n\n"
 
-    return Response(
-        generate(),
-        content_type="text/event-stream"
-    )
+    return Response(generate(), content_type="text/event-stream")
 
 # Sign up route
 @app.route("/signup", methods=["GET", "POST"])
@@ -331,7 +325,7 @@ def my_account():
         current_user.password = generate_password_hash(new_password, method="pbkdf2:sha256")
         db.session.commit()
         flash("Password updated successfully!", "success")
-        return redirect(url_for("my_account"))
+        return redirect(url_for("index"))
 
     return render_template("my_account.html", user=current_user)
 
