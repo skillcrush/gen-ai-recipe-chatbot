@@ -35,6 +35,14 @@ body {
   overflow: hidden;
 }
 
+a {
+  color: inherit;
+}
+
+h1 {
+  font-size: 1.5rem;
+}
+
 .site-header {
   top: 0;
   width: 100%;
@@ -48,20 +56,23 @@ body {
 .header-content-wrapper {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  flex-flow: row wrap;
   width: 90%;
   max-width: 1400px;
+  padding-bottom: 20px;
 }
 
 .site-header .logo {
   height: 35px;
   line-height: 0;
+  margin: 30px 0 20px 0;
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  margin: 20px;
+  margin: 0 20px 0 20px;
 }
 
 .user-info img {
@@ -73,9 +84,8 @@ body {
 }
 
 .chat-container {
-  /* Todo: Check width once additional features have been decided */
-  max-width: 500px;
-  width: 70%;
+  max-width: 800px;
+  width: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -232,11 +242,6 @@ input[type="button"] {
   margin: 0 2px;
 }
 
-.button-group {
-  /* background-color: var(--secondary-color); */
-  border-radius: 0 10px 10px 0;
-}
-
 #send-btn {
   width: 40px;
   height: 54px;
@@ -247,60 +252,6 @@ input[type="button"] {
 .send-icon {
   width: 20px;
 }
-
-/* From previous chatbot. Check to see if any is needed once the message section populates */
-/* input[type="submit"] {
-  flex-grow: 4;
-}
-
-input[type="button"] {
-  flex-grow: 1;
-  background-color: #f44336;
-}
-
-input[type="text"] {
-  padding: 12px 16px;
-  border: 1px solid #10a37f;
-  border-radius: 4px;
-  margin-bottom: 24px;
-}
-
-::placeholder {
-  color: var(--placeholder-text-accents);
-  font-size: 1.25rem;
-  opacity: 1;
-}
-
-.typing-indicator-container {
-  display: flex;
-  justify-content: flex-start;
-}
-
-.typing-indicator {
-  margin-left: 4px;
-  font-size: 1rem;
-}
-
-.typing-indicator::after {
-  content: "•";
-  animation: typing 1.5s infinite step-start;
-} */
-
-/* @keyframes typing {
-
-  0%,
-  100% {
-    content: "•";
-  }
-
-  33% {
-    content: "••";
-  }
-
-  66% {
-    content: "•••";
-  }
-} */
 
 .message-role {
   align-self: flex-start;
@@ -325,11 +276,11 @@ main {
 .main-content-wrapper {
   display: flex;
   flex-direction: row;
-  height: 75vh;
+  height: 70vh;
   /* Allow scrolling within this container */
   overflow: auto;
   align-items: stretch;
-  justify-content: flex-end;
+  justify-content: center;
   width: 90%;
   max-width: 1400px;
 }
@@ -355,15 +306,15 @@ main {
   flex-direction: row;
   overflow: auto;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   width: 90%;
   max-width: 1400px;
   margin-bottom: 35px;
 }
 
 .login-content-wrapper {
-  max-width: 500px;
-  width: 70%;
+  max-width: 800px;
+  width: 100%;
   display: flex;
   flex-flow: row wrap;
   box-sizing: border-box;
@@ -401,7 +352,7 @@ main {
   display: flex;
   flex-direction: column;
   margin-bottom: 20px;
-  width: 60%;
+  width: 100%;
 }
 
 .form-group label {
@@ -440,20 +391,26 @@ main {
 }
 
 .user-info a {
-  margin: 0 10px; /* Adjust the space as needed */
-  text-decoration: none; /* Optional: To clean up the underline */
-  color: inherit; /* Match text color with the rest of the header */
+  margin: 0 10px;
+  /* Adjust the space as needed */
+  text-decoration: none;
+  /* Optional: To clean up the underline */
+  color: inherit;
+  /* Match text color with the rest of the header */
 }
 
 .user-info img {
-  margin-right: 10px; /* Add space between the image and links */
+  margin-right: 10px;
+  /* Add space between the image and links */
 }
 
 .avatar-circle {
   width: 40px;
   height: 40px;
-  background-color: #ffa6de; /* Pink Background */
-  color: #000; /* Black Text */
+  background-color: #ffa6de;
+  /* Pink Background */
+  color: #000;
+  /* Black Text */
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -469,7 +426,8 @@ main {
   justify-content: center;
   align-items: center;
   padding: 10px;
-  background-color: #fff; /* White background for the input */
+  background-color: #fff;
+  /* White background for the input */
   border-top: 1px solid #ccc;
 }
 
@@ -485,7 +443,7 @@ main {
   align-items: center;
   background-color: #f7f7f7;
   border: 1px solid #ccc;
-  border-radius: 20px;
+  border-radius: 10px;
   overflow: hidden;
   width: 100%;
   max-width: 600px;
@@ -503,11 +461,13 @@ main {
 }
 
 #send-btn {
-  background-color: #2d2d2d; /* Black background for button */
+  background-color: #2d2d2d;
+  /* Black background for button */
   border: none;
   padding: 10px;
   cursor: pointer;
-  border-radius: 0 20px 20px 0; /* Rounded on the right side */
+  border-radius: 0 10px 10px 0;
+  /* Rounded on the right side */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -516,11 +476,13 @@ main {
 #send-btn .send-icon {
   width: 20px;
   height: 20px;
-  filter: brightness(0) invert(1); /* White icon */
+  filter: brightness(0) invert(1);
+  /* White icon */
 }
 
 #send-btn:hover {
-  background-color: #000000; /* Slightly darker black on hover */
+  background-color: #000000;
+  /* Slightly darker black on hover */
 }
 
 .assistant-message p {
@@ -552,4 +514,51 @@ main {
   padding: 10px;
   border-radius: 8px;
   overflow-x: auto;
+}
+
+@media screen and (min-width: 768px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  .header-content-wrapper {
+    justify-content: space-between;
+    flex-flow: row wrap;
+    padding-bottom: 0;
+  }
+
+  .chatbot-content-wrapper {
+    width: 75%;
+  }
+
+  .form-group {
+    width: 60%;
+  }
+}
+
+@media screen and (min-width: 1200px) {
+  .main-content-wrapper {
+    justify-content: flex-end;
+  }
+
+  .chat-container {
+    max-width: 500px;
+  }
+
+  .chatbot-content-wrapper {
+    width: 90%;
+  }
+
+  .login-form {
+    justify-content: flex-end;
+  }
+
+  .login-content-wrapper {
+    max-width: 500px;
+  }
+
+  .form-group {
+    width: 65%;
+  }
+
 }
