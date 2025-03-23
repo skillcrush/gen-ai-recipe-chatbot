@@ -318,14 +318,13 @@ def main():
     parser.add_argument("-ss", "--use_similarity_search", action="store_true", help="Use similarity search.")
     parser.add_argument("-sr", "--use_self_query_retrieval", action="store_true", help="Use self query retrieval.")
     
-    
     # Parse the arguments
     args = parser.parse_args()
-
+    
     # Set default behavior: use similarity search if neither is specified
     if not args.use_similarity_search and not args.use_self_query_retrieval:
         args.use_similarity_search = True
-    
+
     top_n = args.top_n
     start_date = args.start_date
     end_date = args.end_date
@@ -398,13 +397,14 @@ def main():
     query = args.query
     results = []
     
-    if args.use_simlarity_search:
+    if args.use_similarity_search:
         print(f"\nSimilarity search with: {query}")
         results = perform_similarity_search(query, chat_llm, vector_store)
     elif args.use_self_query_retrieval:
         print(f"\nSelf-query retrieval with: {query}")
         results = perform_self_query_retrieval(query, chat_llm, vector_store)
-
+    
+    # Print out the results
     # Check if results is None or empty
     if not results:
         print(f"\nNo results found for query: {query}")
