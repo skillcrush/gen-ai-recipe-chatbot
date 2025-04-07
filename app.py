@@ -18,6 +18,7 @@ from supabase.client import ClientOptions
 # LangChain imports
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import SupabaseVectorStore
+from langchain_core.messages import SystemMessage, HumanMessage
 
 from langchain.agents import tool
 from langchain_community.query_constructors.supabase import SupabaseVectorTranslator
@@ -42,7 +43,15 @@ load_dotenv(override=True)
 
 # Set up logging in the app.log file
 log = logging.getLogger("assistant")
-logging.basicConfig(filename="app.log", level=logging.INFO)
+log_handler = logging.FileHandler("app.log")
+log_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+log.addHandler(log_handler)
+log.setLevel(logging.INFO)
+
+# Also log to console for debugging
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+log.addHandler(console_handler)
 
 # Import and configure OpenAI
 from langchain_openai import ChatOpenAI
@@ -65,6 +74,9 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+# Temporarily disable login for testing
+app.config['LOGIN_DISABLED'] = True
 
 # User model
 class User(UserMixin, db.Model):
@@ -192,75 +204,236 @@ def create_recipes_multi_query_tool():
 # Routes
 # Index route
 @app.route("/", methods=["GET"])
-@login_required
+# @login_required - Temporarily disabled for testing
 def index():
     return render_template("index.html")  # Serve the chat interface
 
-# Stream route
+# Stream route with database tools
 @app.route("/stream", methods=["GET"])
-@login_required
+# @login_required - Temporarily disabled for testing
 def stream():
+    log.info(f"Stream request received with query: {request.args.get('query', '')}")
+    
+    # Get the query from the request
+    query = request.args.get("query", "")
+    if not query:
+        log.error("Empty query received")
+        return Response("data: Error: Empty query\n\n", content_type="text/event-stream")
+    
+    log.info(f"Processing query: {query}")
+    
+    # Create the database tools
+    try:
+        recipes_similarity_search_tool = create_recipes_similarity_search_tool()
+        recipes_self_query_tool = create_recipes_self_query_tool()
+        recipes_multi_query_tool = create_recipes_multi_query_tool()
+        books_retrieval_qa_tool = create_books_retrieval_qa_tool()
+        books_similarity_search_tool = create_books_similarity_search_tool()
+        log.info("All tools created successfully")
+    except Exception as e:
+        log.error(f"Error creating tools: {str(e)}")
+        return Response(f"data: Error creating tools: {str(e)}\n\n", content_type="text/event-stream")
+    
+    # System message with instructions to format recipes in a card-friendly way
+    system_message_content = """You are ChefBoost, a helpful cooking assistant that provides recipe information and cooking advice from a database. 
+    
+When providing recipes, format them in this exact structured way:
 
-    recipes_similarity_search_tool = create_recipes_similarity_search_tool()
-    recipes_self_query_tool = create_recipes_self_query_tool()
-    recipes_multi_query_tool = create_recipes_multi_query_tool()
-    books_retrieval_qa_tool = create_books_retrieval_qa_tool()
-    books_similarity_search_tool = create_books_similarity_search_tool()
+1. Start with "Title: [Recipe Name]" on the first line
+2. Then add "Recipe Type: [Type]" where type is one of: dessert, appetizer, main course, soup, salad, beverage, breakfast, side dish
+3. Then add "Cuisine: [Cuisine]" where cuisine is the origin (e.g., Italian, French, Thai, etc.)
+4. Then add "Special Considerations: [Any dietary notes]" for allergies or diets (e.g., vegetarian, gluten-free, dairy-free)
+5. Then "Ingredients:" followed by a bulleted list (use - for bullets)
+6. Add "Instructions:" followed by numbered steps (use 1. 2. 3. etc.)
+7. ALWAYS add "Source: [Source]" with either the source of the recipe or "ChefBoost AI" if created by you
+8. ALWAYS add "Date: [Date]" with the current date
 
-    graph = create_react_agent(
-        model=chat_llm,
-        tools=[   
-            recipes_similarity_search_tool,
-            recipes_self_query_tool,
-            recipes_multi_query_tool,
-            books_retrieval_qa_tool,
-            books_similarity_search_tool,
-        ],
-        checkpointer=memory,
-        debug=True
-    )
+Important: 
+- DO NOT use markdown formatting like bold (** **), just use plain text
+- ALWAYS use the exact headings shown above with colons (:)
+- When multiple recipes are requested, create separate recipes with Title: at the start of each
+- Keep each recipe complete with ALL fields
+- When answering non-recipe questions, provide clear, helpful responses as a cooking assistant
+- You have access to tools to search a database of recipes and cooking information
 
-    inputs = {"messages": [("user", request.args.get("query", ""))]}
+Example format:
+Title: Italian Tiramisu
+Recipe Type: dessert
+Cuisine: Italian  
+Special Considerations: contains eggs and dairy
+Ingredients:
+- 6 egg yolks
+- 3/4 cup sugar
+- 16 oz mascarpone cheese
+- 1 1/2 cups strong brewed coffee, cooled
+- 24 ladyfinger cookies
+- 1/4 cup cocoa powder for dusting
+Instructions:
+1. Beat egg yolks and sugar until light and fluffy
+2. Fold in mascarpone cheese until smooth
+3. Quickly dip each ladyfinger in coffee and arrange in serving dish
+4. Spread half the mascarpone mixture over ladyfingers
+5. Add another layer of dipped ladyfingers
+6. Top with remaining mascarpone mixture
+7. Dust with cocoa powder and refrigerate for at least 4 hours
+Source: Traditional Italian Cookbook
+Date: 04/06/2025"""
+    
+    # Create the agent with tools
+    try:
+        graph = create_react_agent(
+            model=chat_llm,
+            tools=[   
+                recipes_similarity_search_tool,
+                recipes_self_query_tool,
+                recipes_multi_query_tool,
+                books_retrieval_qa_tool,
+                books_similarity_search_tool,
+            ],
+            checkpointer=memory,
+            prompt=system_message_content,
+            debug=True
+        )
+        log.info("Agent graph created successfully")
+    except Exception as e:
+        log.error(f"Error creating agent: {str(e)}")
+        return Response(f"data: Error creating LLM agent: {str(e)}\n\n", content_type="text/event-stream")
+
+    # Setup inputs for the agent
+    user_message = HumanMessage(content=query)
+    inputs = {"messages": [user_message]}
     config = {"configurable": {"thread_id": "thread-1"}}
-
+    
     HEARTBEAT_INTERVAL = 5
 
     @stream_with_context
     def generate():
-        stream_iterator = graph.stream(inputs, config, stream_mode="values")
-        last_sent_time = time.time()
-
-        while True:
-            # Check if we've been idle too long
-            if time.time() - last_sent_time > HEARTBEAT_INTERVAL:
-                # Send a heartbeat
-                yield "data: [heartbeat]\n\n"
-                last_sent_time = time.time()
-
-            try:
-                step = next(stream_iterator)
-            except StopIteration:
-                # No more data from the agent
-                break
-            except Exception as e:
-                # On any exception, report it and stop
-                yield f"data: Error: {str(e)}\n\n"
-                return
-
-            # We got a new message from the agent
-            message = step["messages"][-1]
-            if isinstance(message, tuple):
-                pass
-                # yield f"data: {message[1]}\n\n" # Uncomment to allow for user messages to be displayed
-            else:
-                if message.response_metadata.get("finish_reason") == "stop":
-                    escaped_message = json.dumps(message.content)
-                    yield f"data: {escaped_message}\n\n"
-                    break
+        try:
+            log.info("Starting agent stream generation")
             last_sent_time = time.time()
+            
+            # Send spinner marker immediately, properly quoted with JSON
+            yield f"data: {json.dumps('[spinner]')}\n\n"
+            log.info("Initial spinner marker sent")
+            
+            # Initialize stream iterator from the agent graph
+            stream_iterator = graph.stream(inputs, config, stream_mode="values")
+            
+            # Stream the response
+            response_chunks = []
+            
+            while True:
+                # Check if we've been idle too long
+                if time.time() - last_sent_time > HEARTBEAT_INTERVAL:
+                    # Send a heartbeat that won't interfere with display, properly JSON encoded
+                    yield f"data: {json.dumps('[keepalive]')}\n\n"
+                    log.info("Keepalive sent")
+                    last_sent_time = time.time()
+                
+                try:
+                    # Get next step from iterator
+                    step = next(stream_iterator)
+                except StopIteration:
+                    # No more data from the agent
+                    log.info("Stream iteration complete")
+                    break
+                except Exception as e:
+                    # On any exception, report it and stop
+                    log.error(f"Error during stream iteration: {str(e)}")
+                    yield f"data: Error: {str(e)}\n\n"
+                    yield "data: [DONE]\n\n"
+                    return
+                
+                # Update timestamp to prevent heartbeats during active streaming
+                last_sent_time = time.time()
+                
+                # Extract message from the step
+                log.info(f"Step keys: {step.keys()}")
+                
+                if "messages" not in step:
+                    log.error(f"No messages in step: {step}")
+                    continue
+                    
+                messages = step["messages"]
+                if not messages:
+                    log.error("Empty messages list in step")
+                    continue
+                
+                message = messages[-1]  # Get the last message
+                log.info(f"Received message from agent: {type(message)}")
+                
+                # Skip user messages
+                if isinstance(message, HumanMessage) or (
+                    isinstance(message, tuple) and message[0] == "user"
+                ):
+                    log.info("Skipping user message")
+                    continue
+                
+                # Extract content from the message
+                try:
+                    if hasattr(message, 'content'):
+                        message_content = message.content
+                        log.info(f"Message has content: {message_content[:100]}...")
+                    elif isinstance(message, tuple) and len(message) > 1:
+                        message_content = message[1]
+                        log.info(f"Tuple message content: {message_content[:100]}...")
+                    else:
+                        message_content = str(message)
+                        log.info(f"Using string representation: {message_content[:100]}...")
+                    
+                    # Skip empty messages
+                    if not message_content:
+                        log.info("Skipping empty message")
+                        continue
+                    
+                    # Skip echoes of the user's query
+                    if message_content.lower() == query.lower():
+                        log.info("Skipping echo of user query")
+                        continue
+                    
+                    # Add to response chunks
+                    response_chunks.append(message_content)
+                    
+                    # Convert any object to string (including dict/list)
+                    if not isinstance(message_content, str):
+                        log.warning(f"Non-string content detected: {type(message_content)}")
+                        send_content = str(message_content)
+                    else:
+                        send_content = message_content
+                        
+                    # Escape any quotes/special chars to avoid breaking the event stream
+                    send_content = send_content.replace("\\", "\\\\").replace("\n", "\\n").replace("\"", "\\\"")
+                    
+                    # Send the message content properly JSON encoded
+                    json_content = json.dumps(send_content)
+                    yield f"data: {json_content}\n\n"
+                    log.info(f"Sent message chunk with length {len(send_content)}")
+                    
+                    # Check for finish reason
+                    finish_reason = None
+                    if hasattr(message, 'response_metadata'):
+                        finish_reason = message.response_metadata.get("finish_reason")
+                        if finish_reason == "stop":
+                            log.info("Received final message with stop reason")
+                            break
+                except Exception as e:
+                    log.error(f"Error processing message: {str(e)}")
+                    log.error(f"Message details: {str(message)}")
+                    continue
+            
+            # Full response for debugging
+            full_response = '\n'.join(response_chunks)
+            log.info(f"Full response length: {len(full_response)}")
+            log.info(f"Full response excerpt: {full_response[:200]}...")
 
-        # Final marker
-        yield "data: [DONE]\n\n"
+            # Final marker, properly JSON encoded
+            log.info("Sending DONE marker")
+            yield f"data: {json.dumps('[DONE]')}\n\n"
+            
+        except Exception as e:
+            log.error(f"Unexpected error in stream: {str(e)}")
+            yield f"data: {json.dumps(f'Error in stream: {str(e)}')}\n\n"
+            yield f"data: {json.dumps('[DONE]')}\n\n"
 
     return Response(
         generate(),
@@ -347,8 +520,16 @@ def log_run(run_status):
     if run_status in ["cancelled", "failed", "expired"]:
         log.error(str(datetime.datetime.now()) + " Run " + run_status + "\n")
 
+# Add CORS headers to all responses
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'  # Allow all origins
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    return response
+
 # Run the Flask server
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()  # Ensure the database is created
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)
