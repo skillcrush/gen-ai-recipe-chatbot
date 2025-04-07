@@ -573,9 +573,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           }
         } else if (titleMatches.length === 1) {
-          // If only one title is found, check if it's a real recipe
-          console.log("Single recipe with Title: detected");
-          recipes = [partialResponse];
+          // If only one title is found, use splitMultipleRecipes as a fallback
+          // This handles the case where we have multiple recipes but only detected the first Title:
+          console.log("Single recipe with Title: detected, checking for more with splitMultipleRecipes");
+          recipes = splitMultipleRecipes(partialResponse);
         }
       }
       
@@ -823,7 +824,7 @@ function splitMultipleRecipes(text) {
   console.log('Checking for multiple recipes in text');
   
   // Try to identify recipe boundaries using Title: markers from LLM formatting
-  // Use a more robust regex that explicitly looks for Title: after blank lines
+  // Use a more robust regex that explicitly looks for Title: after blank lines OR at the beginning of text
   const titleRegex = /(?:^|\n\s*\n\s*)Title:/gi;
   const titleMatches = [...text.matchAll(titleRegex)];
   
@@ -852,6 +853,62 @@ function splitMultipleRecipes(text) {
     
     console.log(`Split text into ${recipes.length} recipes with Title: markers`);
     return recipes.length > 0 ? recipes : [text];
+  }
+  
+  // Special case: Even if only one Title: marker is found, check if the content has multiple
+  // recipe patterns like "Title: X" followed by another recipe without a proper Title: marker
+  if (titleMatches.length === 1 && text.includes('\n\nTitle:')) {
+    // Look for patterns that suggest multiple recipes, like double newlines followed by Recipe Type:
+    const recipeTypeMatches = [...text.matchAll(/\n\s*\n\s*(?:Recipe Type:|Cuisine:|Ingredients:)/gi)];
+    
+    if (recipeTypeMatches.length > 1) {
+      console.log(`Found potential recipe boundaries using secondary markers: ${recipeTypeMatches.length}`);
+      
+      // Try to split at these boundaries
+      const splitIndices = [titleMatches[0].index]; // Start with the Title: marker
+      
+      for (const match of recipeTypeMatches) {
+        // Only add this as a split point if it's preceded by a double newline and not too close to the Title:
+        const matchIndex = match.index;
+        
+        // Check if there's a double newline before this match
+        const previousText = text.substring(Math.max(0, matchIndex - 50), matchIndex);
+        if (previousText.includes('\n\n') && matchIndex > titleMatches[0].index + 200) {
+          // Look backwards from this match to find the double newline
+          const precedingText = text.substring(0, matchIndex);
+          const lastDoubleNewline = precedingText.lastIndexOf('\n\n');
+          
+          if (lastDoubleNewline !== -1 && lastDoubleNewline > splitIndices[splitIndices.length - 1] + 100) {
+            splitIndices.push(lastDoubleNewline + 2); // +2 to skip the newlines
+          }
+        }
+      }
+      
+      // If we found additional split points, use them
+      if (splitIndices.length > 1) {
+        console.log('Potential recipe split points:', splitIndices);
+        
+        // Split the text at these indices
+        const recipes = [];
+        
+        for (let i = 0; i < splitIndices.length; i++) {
+          const start = splitIndices[i];
+          const end = (i < splitIndices.length - 1) ? splitIndices[i + 1] : text.length;
+          
+          const recipe = text.substring(start, end).trim();
+          if (recipe.length > 0) {
+            console.log(`Adding split recipe ${i+1} with length ${recipe.length}`);
+            console.log(`Split recipe ${i+1} preview: ${recipe.substring(0, 50)}...`);
+            recipes.push(recipe);
+          }
+        }
+        
+        if (recipes.length > 1) {
+          console.log(`Split text into ${recipes.length} recipes with combined markers`);
+          return recipes;
+        }
+      }
+    }
   }
   
   // Fallback: check for markdown headings with recipe titles
