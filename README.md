@@ -1,4 +1,4 @@
-gti# Setting up to run scripts using the openai API with Python.
+# Setting up to run scripts using the openai API with Python.
 
 The script will be run in a virtual environment. Start by creating a virtual environment:
 
@@ -48,13 +48,13 @@ On a Mac:
 On Windows:
 `python app.py`
 
-## Example of running a file using a CLI built with argparse: books_storage_and_retrieval.py file:
+## Example of running a file using a CLI built with argparse: books_storage_and_retrieval.py file. Flag(s) added as needed to the command. For instance, the -lb flag loads books:
 
 On a Mac:
-`python3 books_storage_and_retrieval.py -lb True`
+`python3 books_storage_and_retrieval.py -lb`
 
 On Windows:
-`python books_storage_and_retrieval.py  -lb True`
+`python books_storage_and_retrieval.py -lb`
 
 <br>
 The app will run at: http://127.0.0.1:5000/
