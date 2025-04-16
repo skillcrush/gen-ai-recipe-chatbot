@@ -195,7 +195,7 @@ def main():
     # Parse the arguments
     args = parser.parse_args()
 
-    # Set default behavior: use similarity search if neither is specified
+    # Set default behavior: perform similarity search if neither is specified
     if not args.perform_similarity_search and not args.perform_retrieval_qa:
         args.perform_similarity_search = True
     
@@ -271,7 +271,7 @@ def main():
         return
 
     # Print out the results
-        # Check if results is None or empty
+    # Check if results is None or empty
     if not results:
         print(f"\nNo results found for query: {query}")
     else:

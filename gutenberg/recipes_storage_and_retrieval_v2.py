@@ -628,7 +628,8 @@ def main():
     parser.add_argument("-q", "--query", type=str, default="Find dessert recipes that combine french and italian cooking.", help="Query for retrieval.")
     parser.add_argument("-ss", "--use_similarity_search", action="store_true", help="Use similarity search.")
     parser.add_argument("-sq", "--use_self_query_retrieval", action="store_true", help="Use self-query retrieval.")
-
+    
+    # Parse the arguments 
     args = parser.parse_args()
 
     # Set default behavior: use similarity search if neither is specified
