@@ -307,127 +307,78 @@ Date: 04/06/2025"""
     def generate():
         try:
             log.info("Starting agent stream generation")
-            last_sent_time = time.time()
             
             # Send spinner marker immediately, properly quoted with JSON
             yield f"data: {json.dumps('[spinner]')}\n\n"
             log.info("Initial spinner marker sent")
             
             # Initialize stream iterator from the agent graph
-            stream_iterator = graph.stream(inputs, config, stream_mode="values")
+            stream_iterator = graph.stream(inputs, config, stream_mode="messages")
             
-            # Stream the response
-            response_chunks = []
+            last_sent_time = time.time()
+            current_output = ""
             
+            # Process messages from the stream
             while True:
                 # Check if we've been idle too long
                 if time.time() - last_sent_time > HEARTBEAT_INTERVAL:
-                    # Send a heartbeat that won't interfere with display, properly JSON encoded
+                    # Send a heartbeat that won't interfere with display
                     yield f"data: {json.dumps('[keepalive]')}\n\n"
                     log.info("Keepalive sent")
                     last_sent_time = time.time()
                 
                 try:
-                    # Get next step from iterator
-                    step = next(stream_iterator)
+                    # Get next message and metadata
+                    msg, metadata = next(stream_iterator)
                 except StopIteration:
                     # No more data from the agent
                     log.info("Stream iteration complete")
                     break
                 except Exception as e:
-                    # On any exception, report it and stop
+                    # On any exception in stream iterator, report it and stop
                     log.error(f"Error during stream iteration: {str(e)}")
-                    yield f"data: Error: {str(e)}\n\n"
-                    yield "data: [DONE]\n\n"
+                    yield f"data: {json.dumps(f'Error: {str(e)}')}\n\n"
+                    yield f"data: {json.dumps('[DONE]')}\n\n"
                     return
                 
                 # Update timestamp to prevent heartbeats during active streaming
                 last_sent_time = time.time()
                 
-                # Extract message from the step
-                log.info(f"Step keys: {step.keys()}")
-                
-                if "messages" not in step:
-                    log.error(f"No messages in step: {step}")
-                    continue
-                    
-                messages = step["messages"]
-                if not messages:
-                    log.error("Empty messages list in step")
-                    continue
-                
-                message = messages[-1]  # Get the last message
-                log.info(f"Received message from agent: {type(message)}")
-                
                 # Skip user messages
-                if isinstance(message, HumanMessage) or (
-                    isinstance(message, tuple) and message[0] == "user"
-                ):
+                if hasattr(msg, 'type') and msg.type == 'human':
                     log.info("Skipping user message")
                     continue
                 
-                # Extract content from the message
-                try:
-                    if hasattr(message, 'content'):
-                        message_content = message.content
-                        log.info(f"Message has content: {message_content[:100]}...")
-                    elif isinstance(message, tuple) and len(message) > 1:
-                        message_content = message[1]
-                        log.info(f"Tuple message content: {message_content[:100]}...")
-                    else:
-                        message_content = str(message)
-                        log.info(f"Using string representation: {message_content[:100]}...")
-                    
-                    # Skip empty messages
-                    if not message_content:
-                        log.info("Skipping empty message")
-                        continue
-                    
+                # Process message content if available
+                if hasattr(msg, 'content') and msg.content:
                     # Skip echoes of the user's query
-                    if message_content.lower() == query.lower():
+                    if msg.content.lower() == query.lower():
                         log.info("Skipping echo of user query")
                         continue
-                    
-                    # Add to response chunks
-                    response_chunks.append(message_content)
-                    
-                    # Convert any object to string (including dict/list)
-                    if not isinstance(message_content, str):
-                        log.warning(f"Non-string content detected: {type(message_content)}")
-                        send_content = str(message_content)
-                    else:
-                        send_content = message_content
                         
-                    # Escape any quotes/special chars to avoid breaking the event stream
-                    send_content = send_content.replace("\\", "\\\\").replace("\n", "\\n").replace("\"", "\\\"")
-                    
-                    # Send the message content properly JSON encoded
-                    json_content = json.dumps(send_content)
-                    yield f"data: {json_content}\n\n"
-                    log.info(f"Sent message chunk with length {len(send_content)}")
-                    
-                    # Check for finish reason
-                    finish_reason = None
-                    if hasattr(message, 'response_metadata'):
-                        finish_reason = message.response_metadata.get("finish_reason")
-                        if finish_reason == "stop":
-                            log.info("Received final message with stop reason")
-                            break
-                except Exception as e:
-                    log.error(f"Error processing message: {str(e)}")
-                    log.error(f"Message details: {str(message)}")
-                    continue
+                    log.info(f"Message content: {msg.content[:100]}...")
+                    current_output += msg.content
+                
+                # Break on finish signal
+                if metadata.get("finish_reason") == "stop":
+                    log.info("Received final message with stop reason")
+                    break
             
-            # Full response for debugging
-            full_response = '\n'.join(response_chunks)
-            log.info(f"Full response length: {len(full_response)}")
-            log.info(f"Full response excerpt: {full_response[:200]}...")
-
-            # Final marker, properly JSON encoded
+            # Send the accumulated response
+            log.info(f"Sending full response with length {len(current_output)}")
+            yield f"data: {json.dumps(current_output)}\n\n"
+            
+            # Final marker
             log.info("Sending DONE marker")
             yield f"data: {json.dumps('[DONE]')}\n\n"
-            
+        
+        except GeneratorExit:
+            # Client disconnected, log it but don't return anything
+            log.info("Client disconnected, generator exited.")
+            return
+        
         except Exception as e:
+            # Catch any other exceptions
             log.error(f"Unexpected error in stream: {str(e)}")
             yield f"data: {json.dumps(f'Error in stream: {str(e)}')}\n\n"
             yield f"data: {json.dumps('[DONE]')}\n\n"
