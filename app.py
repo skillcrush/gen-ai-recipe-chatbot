@@ -304,15 +304,39 @@ def stream():
 
     @stream_with_context
     def generate():
-        stream_iterator = graph.stream(inputs, config, stream_mode="messages")
-        current_node = None
-        current_output = ""
+        HEARTBEAT_INTERVAL = 5
         try:
+            log.info("Starting agent stream generation")
+            
+            # Send spinner marker immediately, properly quoted with JSON
+            yield f"data: {json.dumps('[spinner]')}\n\n"
+            log.info("Initial spinner marker sent")
+            
+            stream_iterator = graph.stream(inputs, config, stream_mode="messages")
+            current_node = None
+            current_output = ""
+            last_sent_time = time.time()
+            
             while True:
+                # Check if we've been idle too long, send heartbeat if needed
+                if time.time() - last_sent_time > HEARTBEAT_INTERVAL:
+                    yield f"data: {json.dumps('[keepalive]')}\n\n"
+                    log.info("Keepalive sent")
+                    last_sent_time = time.time()
+                    
                 try:
                     msg, metadata = next(stream_iterator)
                 except StopIteration:
+                    log.info("Stream iteration complete")
                     break
+                except Exception as e:
+                    log.error(f"Error during stream iteration: {str(e)}")
+                    yield f"data: {json.dumps(f'Error: {str(e)}')}\n\n"
+                    yield f"data: {json.dumps('[DONE]')}\n\n"
+                    return
+                
+                # Update timestamp to prevent heartbeats during active streaming
+                last_sent_time = time.time()
 
                 node = metadata.get("langgraph_node")
                 # If we detect a change in the node, assume previous output was intermediate.
@@ -327,16 +351,21 @@ def stream():
 
                 # Once we get a finish signal for the current node, we break out.
                 if metadata.get("finish_reason") == "stop":
+                    log.info("Received final message with stop reason")
                     break
         except GeneratorExit:
+            log.info("Client disconnected, generator exited.")
             return  # client disconnected
         except Exception as e:
-            yield f"data: Error: {str(e)}\n\n"
+            log.error(f"Unexpected error in stream: {str(e)}")
+            yield f"data: {json.dumps(f'Error: {str(e)}')}\n\n"
+            yield f"data: {json.dumps('[DONE]')}\n\n"
             return
 
-        # Yield only the final aggregated output from the last node.
+        # Yield only the final aggregated output from the last node
+        log.info(f"Sending full response with length {len(current_output)}")
         yield f"data: {json.dumps(current_output)}\n\n"
-        yield "data: [DONE]\n\n"
+        yield f"data: {json.dumps('[DONE]')}\n\n"
 
     return Response(generate(), content_type="text/event-stream")
 
