@@ -41,14 +41,11 @@ from gutenberg.recipes_storage_and_retrieval_v2 import (
 # Load environment variables from a .env file
 load_dotenv(override=True)
 
-# Set up logging in the app.log file
+# Set up logging to stream to console only (GAE doesn't allow file writing)
 log = logging.getLogger("assistant")
-log_handler = logging.FileHandler("app.log")
-log_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-log.addHandler(log_handler)
 log.setLevel(logging.INFO)
 
-# Also log to console for debugging
+# Log to console for debugging
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 log.addHandler(console_handler)
@@ -515,10 +512,10 @@ def logout():
     flash("You have been logged out.", "success")
     return redirect(url_for("login"))
 
-# Function to add to the log in the app.log file
+# Function to add to the log
 def log_run(run_status):
     if run_status in ["cancelled", "failed", "expired"]:
-        log.error(str(datetime.datetime.now()) + " Run " + run_status + "\n")
+        log.error(str(datetime.datetime.now()) + " Run " + run_status)
 
 # Add CORS headers to all responses
 @app.after_request
