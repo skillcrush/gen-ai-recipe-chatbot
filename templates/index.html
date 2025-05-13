@@ -59,104 +59,6 @@
     }
   }
 </style>
-
-<script>
-  function sendQuery() {
-    const queryInput = document.getElementById("query");
-    const query = queryInput.value.trim();
-    if (!query) return;
-
-    const chatWindow = document.getElementById("chat-window");
-
-    // Append user’s message
-    chatWindow.innerHTML += `
-        <div class="user-message">
-          ${query}
-        </div>
-      `;
-    queryInput.value = "";
-
-    // -------------------
-    // 1) Insert the spinner as a temporary assistant message
-    // -------------------
-    const spinnerId = "assistant-spinner-" + Date.now();
-    chatWindow.innerHTML += `
-        <div class="assistant-message" id="${spinnerId}">
-          <div class="spinner"></div>
-        </div>
-      `;
-    chatWindow.scrollTop = chatWindow.scrollHeight; // auto-scroll
-
-    // Prepare variables for streaming
-    let partialResponse = "";         // accumulate chunks here
-    let isFirstChunk = true;         // track the first chunk to remove spinner
-    let assistantResponseEl = null;  // the final assistant message DOM
-
-    // Open SSE connection
-    const eventSource = new EventSource(`/stream?query=${encodeURIComponent(query)}`);
-
-    eventSource.onmessage = (event) => {
-      const rawData = event.data;
-
-      if (rawData === "[DONE]") {
-        // All chunks received. Close stream and stop the spinner
-        eventSource.close();
-        return;
-      }
-
-      // -------------------
-      // 2) On first chunk, remove the spinner block & create a new "assistant-message"
-      // -------------------
-      if (isFirstChunk) {
-        isFirstChunk = false;
-
-        // Remove the spinner element
-        const spinnerEl = document.getElementById(spinnerId);
-        if (spinnerEl) spinnerEl.remove();
-
-        // Create a new assistant message DOM for streamed content
-        assistantResponseEl = document.createElement("div");
-        assistantResponseEl.classList.add("assistant-message");
-        chatWindow.appendChild(assistantResponseEl);
-      }
-
-      // Try to parse as JSON if your server escapes the text, otherwise use as-is
-      let chunk;
-      try {
-        chunk = JSON.parse(rawData);
-      } catch {
-        chunk = rawData;
-      }
-
-      // Append chunk to partialResponse
-      partialResponse += chunk;
-
-      // Convert partialResponse (Markdown) to HTML
-      const html = marked.parse(partialResponse);
-
-      // Update the assistant message with rendered Markdown
-      assistantResponseEl.innerHTML = html;
-
-      // Auto-scroll to bottom
-      chatWindow.scrollTop = chatWindow.scrollHeight;
-    };
-
-    eventSource.onerror = () => {
-      // On error, remove spinner if it’s still there
-      const spinnerEl = document.getElementById(spinnerId);
-      if (spinnerEl) spinnerEl.remove();
-
-      // Optionally append an error message
-      chatWindow.innerHTML += `
-          <div class="assistant-message">
-            Error occurred while streaming data.
-          </div>
-        `;
-
-      eventSource.close();
-    };
-  }
-</script>
 {% endblock %}
 
 <!-- Add user info conditional statement for the header section -->
@@ -177,17 +79,6 @@
 
 {% block content %}
 <div class="main-content-wrapper">
-  <!-- Standalone View Toggle Buttons - positioned absolutely -->
-  <div id="standalone-view-toggle" class="standalone-view-toggle">
-    <div class="view-mode-label">View:</div>
-    <button id="standalone-text-btn" class="standalone-btn active" onclick="switchViewDirect('text')">
-      <span class="view-icon">📝</span> Text
-    </button>
-    <button id="standalone-card-btn" class="standalone-btn" onclick="switchViewDirect('card')">
-      <span class="view-icon">🍽️</span> Cards
-    </button>
-  </div>
-  
   <div class="chat-container">
     <section class="chatbot-header">
       <div class="chatbot-content-wrapper">
@@ -209,8 +100,8 @@
     <section class="messages" id="chat-window">
       <!-- SSE messages get appended here -->
     </section>
-    
-    <!-- Recipe card template - will be cloned by JavaScript -->
+
+    <!-- Recipe card template - will be cloned by JavaScript and populated with recipe data -->
     <template id="recipe-card-template">
       <div class="recipe-card">
         <div class="recipe-header">
@@ -246,119 +137,8 @@
         </div>
       </div>
     </template>
-    
-    <!-- Direct view toggle script -->
-    <script>
-      // Standalone function to directly switch views
-      function switchViewDirect(mode) {
-        console.log('%c SWITCHING VIEW DIRECTLY TO: ' + mode, 'background: #ff9; color: #f00; font-size: 20px; font-weight: bold;');
-        
-        // Update button states
-        const textBtn = document.getElementById('standalone-text-btn');
-        const cardBtn = document.getElementById('standalone-card-btn');
-        
-        if (textBtn && cardBtn) {
-          console.log('Found buttons, updating classes');
-          textBtn.classList.toggle('active', mode === 'text');
-          cardBtn.classList.toggle('active', mode === 'card');
-        } else {
-          console.error('Could not find standalone buttons!');
-        }
-        
-        // Display the current window object keys for debugging
-        console.log('Available window functions:', Object.keys(window).filter(key => typeof window[key] === 'function'));
-        
-        // Check if switchView exists in various places
-        console.log('Direct property check: window.switchView =', window.switchView);
-        console.log('switchView in global scope =', typeof switchView !== 'undefined' ? switchView : 'not found');
-        
-        try {
-          // Attempt to force access function directly
-          if (typeof switchView === 'function') {
-            console.log('Calling switchView directly from global scope');
-            switchView(mode);
-          } else if (typeof window.switchView === 'function') {
-            console.log('Calling switchView from window object');
-            window.switchView(mode);
-          } else {
-            // Last resort - find all instances of .assistant-message and toggle manually
-            console.log('Could not find switchView, performing manual view switch');
-            manualViewSwitch(mode);
-          }
-        } catch (e) {
-          console.error('Error calling switchView:', e);
-          // Attempt manual switch as fallback
-          manualViewSwitch(mode);
-        }
-        
-        return false;
-      }
-      
-      // Manual function to switch views as absolute fallback
-      function manualViewSwitch(mode) {
-        console.log('Performing manual view switch to:', mode);
-        
-        // Set global state
-        window.currentViewMode = mode;
-        
-        const chatWindow = document.getElementById('chat-window');
-        if (!chatWindow) {
-          console.error('Chat window not found!');
-          return;
-        }
-        
-        const messages = chatWindow.querySelectorAll('.assistant-message');
-        console.log(`Found ${messages.length} messages to update`);
-        
-        messages.forEach((msg, i) => {
-          console.log(`Processing message ${i}`);
-          
-          // Check for recipe data
-          const recipeContainer = msg.querySelector('.recipe-container');
-          const recipeCard = msg.querySelector('.recipe-card');
-          
-          if (recipeContainer || recipeCard || msg.hasAttribute('data-recipe-index') || 
-              msg.hasAttribute('data-recipe-indices') || msg.hasAttribute('data-is-recipe')) {
-            
-            console.log(`Message ${i} contains recipe data`);
-            
-            if (mode === 'card') {
-              // Force card view here
-              msg.classList.add('card-view');
-              msg.classList.remove('text-view');
-            } else {
-              // Force text view here
-              msg.classList.add('text-view');
-              msg.classList.remove('card-view');
-            }
-          }
-        });
-      }
-      
-      // Initialize on DOM load
-      document.addEventListener('DOMContentLoaded', function() {
-        console.log('Initializing view toggle controls');
-        
-        // Set initial mode
-        const currentMode = window.currentViewMode || 'text';
-        
-        // Set old standalone buttons (now hidden)
-        const textBtn = document.getElementById('standalone-text-btn');
-        const cardBtn = document.getElementById('standalone-card-btn');
-        if (textBtn && cardBtn) {
-          textBtn.classList.toggle('active', currentMode === 'text');
-          cardBtn.classList.toggle('active', currentMode === 'card');
-        }
-        
-        // Set toggle switch state
-        const toggleCheckbox = document.getElementById('view-toggle-checkbox');
-        if (toggleCheckbox) {
-          toggleCheckbox.checked = currentMode === 'card';
-        }
-      });
-    </script>
-    
 
+    <!-- Message input form and text/recipe view toggle -->
     <section class="message-input-container">
       <form class="message-form" onsubmit="event.preventDefault(); event.stopPropagation(); sendQuery(); return false;">
         <div class="input-wrapper">
@@ -370,7 +150,8 @@
             </label>
             <span class="toggle-label">Cards</span>
           </div>
-          <button type="submit" id="send-btn" onclick="event.preventDefault(); event.stopPropagation(); sendQuery(); return false;">
+          <button type="submit" id="send-btn"
+            onclick="event.preventDefault(); event.stopPropagation(); sendQuery(); return false;">
             <img src="{{ url_for('static', filename='send-icon.png') }}" alt="Send" class="send-icon">
             <span class="visually-hidden">Send prompt</span>
           </button>
