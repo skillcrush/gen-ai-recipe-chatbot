@@ -60,7 +60,7 @@
   }
 </style>
 
-<script>
+<!-- <script>
   function sendQuery() {
     const queryInput = document.getElementById("query");
     const query = queryInput.value.trim();
@@ -156,7 +156,7 @@
       eventSource.close();
     };
   }
-</script>
+</script> -->
 {% endblock %}
 
 <!-- Add user info conditional statement for the header section -->
@@ -177,28 +177,17 @@
 
 {% block content %}
 <div class="main-content-wrapper">
-  <!-- Standalone View Toggle Buttons - positioned absolutely -->
-  <div id="standalone-view-toggle" class="standalone-view-toggle">
-    <div class="view-mode-label">View:</div>
-    <button id="standalone-text-btn" class="standalone-btn active" onclick="switchViewDirect('text')">
-      <span class="view-icon">📝</span> Text
-    </button>
-    <button id="standalone-card-btn" class="standalone-btn" onclick="switchViewDirect('card')">
-      <span class="view-icon">🍽️</span> Cards
-    </button>
-  </div>
-  
   <div class="chat-container">
     <section class="chatbot-header">
       <div class="chatbot-content-wrapper">
         <h2>👋 ChefBoost!</h2>
         <div class="window-controls">
           <button type="button" id="minimize-btn">
-            <img src="{{ url_for('static', filename='open-icon.png' ) }}" alt="" class="logo">
+            <img src="{{ url_for('static', filename='minimize-icon.png' ) }}" alt="" class="minimize-icon">
             <span class="visually-hidden">minimize</span>
           </button>
           <button type="button" id="close-btn">
-            <img src="{{ url_for('static', filename='close-icon.png' ) }}" alt="" class="logo">
+            <img src="{{ url_for('static', filename='close-icon.png' ) }}" alt="" class="close-icon">
             <span class="visually-hidden">close</span>
           </button>
         </div>
@@ -209,10 +198,10 @@
     <section class="messages" id="chat-window">
       <!-- SSE messages get appended here -->
     </section>
-    
-    <!-- Recipe card template - will be cloned by JavaScript -->
+
+    <!-- Recipe card template - will be cloned by JavaScript and populated with recipe data -->
     <template id="recipe-card-template">
-      <div class="recipe-card">
+      <article class="recipe-card">
         <div class="recipe-header">
           <h3 class="recipe-title"></h3>
           <div class="recipe-metadata">
@@ -225,10 +214,6 @@
           <div class="recipe-info-panel">
             <h4>Ingredients</h4>
             <div class="recipe-ingredients"></div>
-            <div class="recipe-nutrition">
-              <h4>Nutrition</h4>
-              <div class="nutrition-content"></div>
-            </div>
           </div>
           <div class="recipe-instructions">
             <h4>Instructions</h4>
@@ -236,129 +221,17 @@
           </div>
         </div>
         <div class="recipe-footer">
-          <button class="shopping-list-btn">Shopping List</button>
-          <button class="factoids-btn">Interesting Facts</button>
-          <div class="source-info-toggle">Source Info</div>
+          <!-- <div class="source-info-toggle">Source Info</div> -->
+          <button class="source-info-toggle" aria-expanded="true">Hide Source</button>
         </div>
         <div class="source-info-panel">
           <h4>Source Information</h4>
           <div class="source-content"></div>
         </div>
-      </div>
+      </article>
     </template>
-    
-    <!-- Direct view toggle script -->
-    <script>
-      // Standalone function to directly switch views
-      function switchViewDirect(mode) {
-        console.log('%c SWITCHING VIEW DIRECTLY TO: ' + mode, 'background: #ff9; color: #f00; font-size: 20px; font-weight: bold;');
-        
-        // Update button states
-        const textBtn = document.getElementById('standalone-text-btn');
-        const cardBtn = document.getElementById('standalone-card-btn');
-        
-        if (textBtn && cardBtn) {
-          console.log('Found buttons, updating classes');
-          textBtn.classList.toggle('active', mode === 'text');
-          cardBtn.classList.toggle('active', mode === 'card');
-        } else {
-          console.error('Could not find standalone buttons!');
-        }
-        
-        // Display the current window object keys for debugging
-        console.log('Available window functions:', Object.keys(window).filter(key => typeof window[key] === 'function'));
-        
-        // Check if switchView exists in various places
-        console.log('Direct property check: window.switchView =', window.switchView);
-        console.log('switchView in global scope =', typeof switchView !== 'undefined' ? switchView : 'not found');
-        
-        try {
-          // Attempt to force access function directly
-          if (typeof switchView === 'function') {
-            console.log('Calling switchView directly from global scope');
-            switchView(mode);
-          } else if (typeof window.switchView === 'function') {
-            console.log('Calling switchView from window object');
-            window.switchView(mode);
-          } else {
-            // Last resort - find all instances of .assistant-message and toggle manually
-            console.log('Could not find switchView, performing manual view switch');
-            manualViewSwitch(mode);
-          }
-        } catch (e) {
-          console.error('Error calling switchView:', e);
-          // Attempt manual switch as fallback
-          manualViewSwitch(mode);
-        }
-        
-        return false;
-      }
-      
-      // Manual function to switch views as absolute fallback
-      function manualViewSwitch(mode) {
-        console.log('Performing manual view switch to:', mode);
-        
-        // Set global state
-        window.currentViewMode = mode;
-        
-        const chatWindow = document.getElementById('chat-window');
-        if (!chatWindow) {
-          console.error('Chat window not found!');
-          return;
-        }
-        
-        const messages = chatWindow.querySelectorAll('.assistant-message');
-        console.log(`Found ${messages.length} messages to update`);
-        
-        messages.forEach((msg, i) => {
-          console.log(`Processing message ${i}`);
-          
-          // Check for recipe data
-          const recipeContainer = msg.querySelector('.recipe-container');
-          const recipeCard = msg.querySelector('.recipe-card');
-          
-          if (recipeContainer || recipeCard || msg.hasAttribute('data-recipe-index') || 
-              msg.hasAttribute('data-recipe-indices') || msg.hasAttribute('data-is-recipe')) {
-            
-            console.log(`Message ${i} contains recipe data`);
-            
-            if (mode === 'card') {
-              // Force card view here
-              msg.classList.add('card-view');
-              msg.classList.remove('text-view');
-            } else {
-              // Force text view here
-              msg.classList.add('text-view');
-              msg.classList.remove('card-view');
-            }
-          }
-        });
-      }
-      
-      // Initialize on DOM load
-      document.addEventListener('DOMContentLoaded', function() {
-        console.log('Initializing view toggle controls');
-        
-        // Set initial mode
-        const currentMode = window.currentViewMode || 'text';
-        
-        // Set old standalone buttons (now hidden)
-        const textBtn = document.getElementById('standalone-text-btn');
-        const cardBtn = document.getElementById('standalone-card-btn');
-        if (textBtn && cardBtn) {
-          textBtn.classList.toggle('active', currentMode === 'text');
-          cardBtn.classList.toggle('active', currentMode === 'card');
-        }
-        
-        // Set toggle switch state
-        const toggleCheckbox = document.getElementById('view-toggle-checkbox');
-        if (toggleCheckbox) {
-          toggleCheckbox.checked = currentMode === 'card';
-        }
-      });
-    </script>
-    
 
+    <!-- Message input form and text/recipe view toggle -->
     <section class="message-input-container">
       <form class="message-form" onsubmit="event.preventDefault(); event.stopPropagation(); sendQuery(); return false;">
         <div class="input-wrapper">
@@ -370,8 +243,9 @@
             </label>
             <span class="toggle-label">Cards</span>
           </div>
-          <button type="submit" id="send-btn" onclick="event.preventDefault(); event.stopPropagation(); sendQuery(); return false;">
-            <img src="{{ url_for('static', filename='send-icon.png') }}" alt="Send" class="send-icon">
+          <button type="submit" id="send-btn"
+            onclick="event.preventDefault(); event.stopPropagation(); sendQuery(); return false;">
+            <img src="{{ url_for('static', filename='send-icon.png') }}" alt="" class="send-icon">
             <span class="visually-hidden">Send prompt</span>
           </button>
         </div>

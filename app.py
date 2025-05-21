@@ -18,6 +18,7 @@ from supabase.client import ClientOptions
 # LangChain imports
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import SupabaseVectorStore
+# TODO: Import SystemMessage and HumanMessage from langchain_core.messages
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from langchain.agents import tool
@@ -41,14 +42,14 @@ from gutenberg.recipes_storage_and_retrieval_v2 import (
 # Load environment variables from a .env file
 load_dotenv(override=True)
 
-# Set up logging in the app.log file
+# * Set up logging in the app.log file
 log = logging.getLogger("assistant")
 log_handler = logging.FileHandler("app.log")
 log_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 log.addHandler(log_handler)
 log.setLevel(logging.INFO)
 
-# Also log to console for debugging
+# * Also log to console for debugging
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 log.addHandler(console_handler)
@@ -75,7 +76,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Temporarily disable login for testing
+# * Temporarily disable login for testing
 app.config['LOGIN_DISABLED'] = True
 
 # User model
@@ -243,13 +244,13 @@ When providing recipes, format them in this exact structured way:
 2. Then add "Recipe Type: [Type]" where type is one of: dessert, appetizer, main course, soup, salad, beverage, breakfast, side dish
 3. Then add "Cuisine: [Cuisine]" where cuisine is the origin (e.g., Italian, French, Thai, etc.)
 4. Then add "Special Considerations: [Any dietary notes]" for allergies or diets (e.g., vegetarian, gluten-free, dairy-free)
-5. Then "Ingredients:" followed by a bulleted list (use - for bullets)
+5. Then "Ingredients:" followed by a bulleted list (use - for bullets) Always include the amount of each ingredient used in the recipe
 6. Add "Instructions:" followed by numbered steps (use 1. 2. 3. etc.)
 7. ALWAYS add "Source: [Source]" with either the source of the recipe or "ChefBoost AI" if created by you
 8. ALWAYS add "Date: [Date]" with the current date
 
 Important: 
-- DO NOT use markdown formatting like bold (** **), just use plain text
+- DO NOT use markdown formatting like bold (** **) or respond with JSON, just use plain text when providing the recipe
 - ALWAYS use the exact headings shown above with colons (:)
 - When multiple recipes are requested, create separate recipes with Title: at the start of each
 - Keep each recipe complete with ALL fields
@@ -454,7 +455,7 @@ def my_account():
         current_user.password = generate_password_hash(new_password, method="pbkdf2:sha256")
         db.session.commit()
         flash("Password updated successfully!", "success")
-        return redirect(url_for("my_account"))
+        return redirect(url_for("index"))
 
     return render_template("my_account.html", user=current_user)
 
@@ -471,7 +472,7 @@ def log_run(run_status):
     if run_status in ["cancelled", "failed", "expired"]:
         log.error(str(datetime.datetime.now()) + " Run " + run_status + "\n")
 
-# Add CORS headers to all responses
+# * Add CORS headers to all responses. This code snippet serves to enable Cross-Origin Resource Sharing (CORS) in the Flask application, allowing web pages from different domains to make requests to the API. Without it, web browsers would block requests to the API due to same-origin policy restrictions.
 @app.after_request
 def add_cors_headers(response):
     response.headers['Access-Control-Allow-Origin'] = '*'  # Allow all origins

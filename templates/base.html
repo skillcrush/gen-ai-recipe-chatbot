@@ -54,17 +54,17 @@
     <div class="header-content-wrapper">
       <figure>
         <a href="{{ url_for('index') }}">
-          <img src="{{ url_for('static', filename='logo.png' ) }}" alt="" class="logo">
+          <img src="{{ url_for('static', filename='logo.png' ) }}" alt="ChefBoost homepage" class="logo">
           <span class="visually-hidden">ChefBoost</span>
         </a>
       </figure>
-      
+
       <!-- Chat agent button - appears when chat is closed -->
       <button id="chat-agent-btn" class="chat-agent-btn hidden">
         <img src="{{ url_for('static', filename='bot-image.png') }}" alt="" class="chat-icon">
         <span>Chat with ChefBoost</span>
       </button>
-      
+
       {% block header %}
       <!-- Additional header content can be added by child templates here -->
       {% endblock %}
