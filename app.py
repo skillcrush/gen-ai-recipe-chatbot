@@ -235,7 +235,7 @@ def stream():
         log.error(f"Error creating tools: {str(e)}")
         return Response(f"data: Error creating tools: {str(e)}\n\n", content_type="text/event-stream")
     
-    # System message with instructions to format recipes in a card-friendly way
+    # TODO: System message with instructions to format recipes in a card-friendly way
     system_message_content = """You are ChefBoost, a helpful cooking assistant that provides recipe information and cooking advice from a database. 
     
 When providing recipes, format them in this exact structured way:
@@ -292,6 +292,7 @@ Date: 04/06/2025"""
                 books_similarity_search_tool,
             ],
             checkpointer=memory,
+            # TODO: Add a system message prompt for the ReAct agent
             prompt=system_message_content,
             debug=True
         )

@@ -10,52 +10,12 @@ document.addEventListener('DOMContentLoaded', function () {
   console.log('DOM loaded, initializing view controls');
 
   // TODO: Initialize the toggle view switch
-  const viewToggleCheckbox = document.getElementById('view-toggle-checkbox');
-  if (viewToggleCheckbox) {
-    viewToggleCheckbox.checked = currentViewMode === 'card';
-  }
 
   // TODO: Initialize view toggle buttons in the index.html template
-  const minimizeBtn = document.getElementById('minimize-btn');
-  const closeBtn = document.getElementById('close-btn');
-  const chatContainer = document.querySelector('.chat-container');
 
   // TODO: Set up window control buttons to minimize the chat window
-  if (minimizeBtn) {
-    minimizeBtn.addEventListener('click', function () {
-      // Toggle minimized state
-      if (chatContainer) {
-        if (chatContainer.classList.contains('minimized')) {
-          // Restore window
-          chatContainer.classList.remove('minimized');
-          minimizeBtn.querySelector('img').src = minimizeBtn.querySelector('img').src.replace('open-icon.png', 'minimize-icon.png');
-          minimizeBtn.querySelector('.visually-hidden').textContent = 'minimize';
-        } else {
-          // Minimize window
-          chatContainer.classList.add('minimized');
-          // ? Should the switch be to Rectangle 8640.png?
-          minimizeBtn.querySelector('img').src = minimizeBtn.querySelector('img').src.replace('minimize-icon.png', 'open-icon.png');
-          minimizeBtn.querySelector('.visually-hidden').textContent = 'restore';
-        }
-      }
-    });
-  }
 
   // TODO: Set up window control buttons to close the chat window
-  if (closeBtn) {
-    closeBtn.addEventListener('click', function () {
-      // Hide the chat container and view toggle
-      if (chatContainer) {
-        chatContainer.classList.add('hidden');
-
-        // Show the chat agent button in the header
-        const chatAgentBtn = document.getElementById('chat-agent-btn');
-        if (chatAgentBtn) {
-          chatAgentBtn.classList.remove('hidden');
-        }
-      }
-    });
-  }
 
   // Make chat window draggable
   const chatHeader = document.querySelector('.chatbot-header');
@@ -118,20 +78,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Set up chat agent button in header. Listen for clicks to show chat window and hide button in header
-  const chatAgentBtn = document.getElementById('chat-agent-btn');
-  if (chatAgentBtn) {
-    chatAgentBtn.addEventListener('click', function () {
-      // Show chat container and view toggle
-      if (chatContainer) {
-        chatContainer.classList.remove('hidden');
-        chatContainer.classList.remove('minimized');
-
-        // Hide the chat agent button
-        chatAgentBtn.classList.add('hidden');
-      }
-    });
-  }
+  // TODO: Set up chat agent button in header. Listen for clicks to show chat window and hide button in header
 
   // Override the default sendQuery function with our enhanced version
   // Function also exists in the index.html template
@@ -1071,428 +1018,389 @@ function extractIngredients(text) {
 }
 
 // TODO: Define toggleView on the window object to ensure it's accessible globally
-window.toggleView = function (isChecked) {
-  console.log("Toggle view called with:", isChecked);
-  const mode = isChecked ? 'card' : 'text';
-
-  // Call switchView directly on window to ensure we're using the global function
-  window.switchView(mode);
-
-  // Update the checkbox state if it was changed programmatically
-  const checkbox = document.getElementById('view-toggle-checkbox');
-  if (checkbox && checkbox.checked !== isChecked) {
-    checkbox.checked = isChecked;
-  }
-};
 
 // TODO: Function to switch between views
-function switchView(mode) {
-  console.log(`%c Switching view to: ${mode}`, 'background: #0a0; color: white; font-size: 16px; padding: 4px;');
 
-  if (mode === window.currentViewMode) {
-    console.log('Already in this view mode, no change needed');
-    return;
+// * Get the chat window 
+const chatWindow = document.getElementById('chat-window');
+if (!chatWindow) {
+  console.error('Chat window not found!');
+  return;
+}
+
+console.log('Found chat window, applying view classes to all messages');
+const allMessages = chatWindow.querySelectorAll('.assistant-message');
+
+// Apply view classes to all messages first
+allMessages.forEach(msg => {
+  // Add the view mode class to the message
+  msg.classList.remove('card-view', 'text-view');
+  msg.classList.add(mode === 'card' ? 'card-view' : 'text-view');
+
+  // IMPORTANT: For non-recipe content in card view, make sure it's visible
+  // Check if this is a non-recipe message
+  const isRecipeMessage =
+    msg.hasAttribute('data-recipe-index') ||
+    msg.hasAttribute('data-recipe-indices') ||
+    msg.hasAttribute('data-is-recipe') ||
+    msg.hasAttribute('data-is-recipes');
+
+  // If we're in card view and this is NOT a recipe message, make sure text is visible
+  if (mode === 'card' && !isRecipeMessage) {
+    const textContent = msg.querySelector('.markdown-text');
+    if (textContent) {
+      textContent.style.display = 'block';
+      console.log('Ensuring non-recipe content is visible in card view');
+    }
   }
+});
 
-  // Store old mode for comparison
-  const oldMode = window.currentViewMode;
+// Now force rerendering of all messages to ensure proper content display
+if (mode === 'card') {
+  console.log('Forcing rerender of all recipe messages in card view format');
+  forceRenderAllRecipeMessages();
+} else {
+  console.log('Forcing rerender of all recipe messages in text view format');
+  forceRenderAllTextMessages();
+}
 
-  // Update current mode - make sure to update window's version
-  window.currentViewMode = mode;
-  console.log(`Current view mode updated to: ${window.currentViewMode}`);
+// Rerender assistant messages with the new view
+console.log('Found chat window, searching for messages for content updates');
+const assistantMessages = chatWindow.querySelectorAll('.assistant-message');
+console.log(`Found ${assistantMessages.length} assistant messages to check for recipes`);
 
-  // Update the toggle switch to reflect current mode
-  const viewToggleCheckbox = document.getElementById('view-toggle-checkbox');
-  if (viewToggleCheckbox) {
-    viewToggleCheckbox.checked = mode === 'card';
-  }
+let recipeCount = 0;
 
-  // Add view mode class to body
-  document.body.classList.remove('card-view-mode', 'text-view-mode');
-  document.body.classList.add(mode === 'card' ? 'card-view-mode' : 'text-view-mode');
-
-  // * Get the chat window 
-  const chatWindow = document.getElementById('chat-window');
-  if (!chatWindow) {
-    console.error('Chat window not found!');
-    return;
-  }
-
-  console.log('Found chat window, applying view classes to all messages');
-  const allMessages = chatWindow.querySelectorAll('.assistant-message');
-
-  // Apply view classes to all messages first
-  allMessages.forEach(msg => {
-    // Add the view mode class to the message
-    msg.classList.remove('card-view', 'text-view');
-    msg.classList.add(mode === 'card' ? 'card-view' : 'text-view');
-
-    // IMPORTANT: For non-recipe content in card view, make sure it's visible
-    // Check if this is a non-recipe message
-    const isRecipeMessage =
-      msg.hasAttribute('data-recipe-index') ||
+// Helper to render all recipe messages as cards
+function forceRenderAllRecipeMessages() {
+  allMessages.forEach((msg, i) => {
+    // Check if message contains any recipe attributes 
+    const hasRecipeAttributes = msg.hasAttribute('data-recipe-index') ||
       msg.hasAttribute('data-recipe-indices') ||
       msg.hasAttribute('data-is-recipe') ||
       msg.hasAttribute('data-is-recipes');
 
-    // If we're in card view and this is NOT a recipe message, make sure text is visible
-    if (mode === 'card' && !isRecipeMessage) {
+    // Only if it's already marked as a recipe, show the card view                      
+    if (hasRecipeAttributes) {
+      console.log(`Forcing card render for message ${i}`);
+
+      // Clear the existing message content and rebuild it
+      if (msg.hasAttribute('data-recipe-indices')) {
+        // Get indices and rebuild all recipes in card view
+        const indicesStr = msg.getAttribute('data-recipe-indices');
+        console.log(`***DEBUG: Raw indices string: "${indicesStr}"`);
+
+        const indices = indicesStr.split(',').map(i => parseInt(i, 10));
+        console.log(`Message ${i} has recipe indices: ${indices}`);
+
+        // Create new content
+        const validIndices = indices.filter(idx => {
+          const isValid = parsedRecipes[idx] !== undefined;
+          console.log(`Index ${idx} is ${isValid ? 'valid' : 'invalid'}`);
+          return isValid;
+        });
+
+        if (validIndices.length > 0) {
+          console.log(`Building card view for ${validIndices.length} recipes`);
+
+          // First, save the existing indices
+          const existingIndices = msg.getAttribute('data-recipe-indices');
+          const recipeCount = msg.getAttribute('data-recipe-count') || validIndices.length;
+
+          console.log(`***CARD DEBUG: Message has data-recipe-indices: ${existingIndices}`);
+          console.log(`***CARD DEBUG: Message has data-recipe-count: ${recipeCount}`);
+
+          // Clear and rebuild
+          msg.innerHTML = '';
+
+          // Re-add the attributes
+          msg.setAttribute('data-recipe-indices', existingIndices);
+          msg.setAttribute('data-is-recipes', 'true');
+          msg.setAttribute('data-recipe-count', recipeCount);
+          msg.classList.add('card-view');
+          msg.classList.remove('text-view');
+
+          // Rebuild all recipe containers
+          validIndices.forEach((recipeIndex, idx) => {
+            const recipe = parsedRecipes[recipeIndex];
+            if (recipe) {
+              console.log(`***CARD DEBUG: Processing recipe ${idx + 1}/${validIndices.length} with index ${recipeIndex}`);
+              console.log(`***CARD DEBUG: Recipe title: ${recipe.metadata?.recipe_title || 'Unknown'}`);
+
+              // Create a container for this recipe
+              const recipeContainer = document.createElement('div');
+              recipeContainer.className = 'recipe-container';
+              recipeContainer.setAttribute('data-recipe-index', recipeIndex);
+
+              try {
+                const card = createRecipeCard(recipe);
+                recipeContainer.appendChild(card);
+              } catch (e) {
+                console.error(`Error creating card for recipe ${idx}:`, e);
+                const formattedText = recipe.text.replace(/\\n/g, '\n').replace(/\*\*/g, '');
+                recipeContainer.innerHTML = marked.parse(formattedText);
+              }
+
+              msg.appendChild(recipeContainer);
+              console.log(`Added recipe ${idx + 1}/${validIndices.length} to card view`);
+            }
+          });
+        }
+      } else {
+        // Handle single recipe case
+        const recipeIndex = parseInt(msg.getAttribute('data-recipe-index') || -1);
+        if (recipeIndex >= 0 && parsedRecipes[recipeIndex]) {
+          // Hide any existing text content
+          const textContent = msg.querySelector('.markdown-text');
+          if (textContent) {
+            textContent.style.display = 'none';
+          }
+
+          // Make sure we're in card view mode
+          msg.classList.add('card-view');
+          msg.classList.remove('text-view');
+
+          // If there's no card yet, create one
+          if (!msg.querySelector('.recipe-card')) {
+            // Create a new card
+            const recipe = parsedRecipes[recipeIndex];
+            try {
+              const card = createRecipeCard(recipe);
+              msg.innerHTML = '';
+              msg.appendChild(card);
+            } catch (e) {
+              console.error(`Error creating card:`, e);
+            }
+          } else {
+            // Show existing cards
+            const recipeCards = msg.querySelectorAll('.recipe-card');
+            recipeCards.forEach(card => {
+              card.style.display = 'block';
+            });
+          }
+        }
+      }
+    }
+  });
+}
+
+// Helper to render all messages as text
+function forceRenderAllTextMessages() {
+  allMessages.forEach((msg, i) => {
+    // Check if message contains any recipe attributes 
+    const hasRecipeAttributes = msg.hasAttribute('data-recipe-index') ||
+      msg.hasAttribute('data-recipe-indices') ||
+      msg.hasAttribute('data-is-recipe') ||
+      msg.hasAttribute('data-is-recipes');
+
+    if (hasRecipeAttributes) {
+      console.log(`Forcing text render for message ${i}`);
+
+      // Clear the existing message content and rebuild it using text format
+      if (msg.hasAttribute('data-recipe-indices')) {
+        // Get indices and rebuild all recipes in text view
+        const indicesStr = msg.getAttribute('data-recipe-indices');
+        console.log(`***TEXT DEBUG: Raw indices string: "${indicesStr}"`);
+
+        const indices = indicesStr.split(',').map(i => parseInt(i, 10));
+        console.log(`Message ${i} has recipe indices: ${indices}`);
+
+        // Create new content
+        const validIndices = indices.filter(idx => {
+          const isValid = parsedRecipes[idx] !== undefined;
+          console.log(`Index ${idx} is ${isValid ? 'valid' : 'invalid'} for text view`);
+          return isValid;
+        });
+
+        if (validIndices.length > 0) {
+          console.log(`Building text view for ${validIndices.length} recipes`);
+
+          // First, save the existing indices
+          const existingIndices = msg.getAttribute('data-recipe-indices');
+          const recipeCount = msg.getAttribute('data-recipe-count') || validIndices.length;
+
+          console.log(`***TEXT DEBUG: Message has data-recipe-indices: ${existingIndices}`);
+          console.log(`***TEXT DEBUG: Message has data-recipe-count: ${recipeCount}`);
+
+          // Clear and rebuild
+          msg.innerHTML = '';
+
+          // Re-add the attributes
+          msg.setAttribute('data-recipe-indices', existingIndices);
+          msg.setAttribute('data-is-recipes', 'true');
+          msg.setAttribute('data-recipe-count', recipeCount);
+          msg.classList.add('text-view');
+          msg.classList.remove('card-view');
+
+          // Create a common container if multiple recipes
+          const recipesWrapper = document.createElement('div');
+          recipesWrapper.className = 'markdown-text';
+          msg.appendChild(recipesWrapper);
+
+          // Rebuild all recipe containers
+          validIndices.forEach((recipeIndex, idx) => {
+            const recipe = parsedRecipes[recipeIndex];
+            if (recipe) {
+              console.log(`***TEXT DEBUG: Processing recipe ${idx + 1}/${validIndices.length} with index ${recipeIndex}`);
+              console.log(`***TEXT DEBUG: Recipe title: ${recipe.metadata?.recipe_title || 'Unknown'}`);
+
+              // Create a container for this recipe
+              const recipeContainer = document.createElement('div');
+              recipeContainer.className = 'recipe-container';
+              recipeContainer.setAttribute('data-recipe-index', recipeIndex);
+
+              try {
+                // Make sure we have complete recipe text
+                const markdown = formatRecipeAsMarkdown(recipe);
+                const formattedText = markdown.replace(/\\n/g, '\n');
+                console.log(`***TEXT DEBUG: Recipe text snippet: ${formattedText.substring(0, 100)}...`);
+                recipeContainer.innerHTML = marked.parse(formattedText);
+              } catch (e) {
+                console.error(`Error formatting markdown for recipe ${idx}:`, e);
+                const formattedText = recipe.text.replace(/\\n/g, '\n').replace(/\*\*/g, '');
+                recipeContainer.innerHTML = marked.parse(formattedText);
+              }
+
+              // Add a divider between recipes except for the last one
+              if (idx < validIndices.length - 1) {
+                const divider = document.createElement('hr');
+                divider.style.margin = '20px 0';
+                recipeContainer.appendChild(divider);
+              }
+
+              recipesWrapper.appendChild(recipeContainer);
+              console.log(`Added recipe ${idx + 1}/${validIndices.length} to text view`);
+            }
+          });
+        }
+      } else {
+        // Handle single recipe case
+        const recipeIndex = parseInt(msg.getAttribute('data-recipe-index') || -1);
+        if (recipeIndex >= 0 && parsedRecipes[recipeIndex]) {
+          // Make sure we're in text view mode
+          msg.classList.add('text-view');
+          msg.classList.remove('card-view');
+
+          // Hide any recipe cards
+          const recipeCards = msg.querySelectorAll('.recipe-card');
+          recipeCards.forEach(card => {
+            card.style.display = 'none';
+          });
+
+          // If there's no text content yet, create it
+          if (!msg.querySelector('.markdown-text')) {
+            // Create text content
+            const recipe = parsedRecipes[recipeIndex];
+            try {
+              const markdown = formatRecipeAsMarkdown(recipe);
+              const formattedText = markdown.replace(/\\n/g, '\n');
+
+              // Create a wrapper for the markdown content
+              const markdownWrapper = document.createElement('div');
+              markdownWrapper.className = 'markdown-text';
+              markdownWrapper.innerHTML = marked.parse(formattedText);
+
+              // Clear existing content and add the wrapper
+              msg.innerHTML = '';
+              msg.appendChild(markdownWrapper);
+            } catch (e) {
+              console.error(`Error creating text view:`, e);
+            }
+          } else {
+            // Show existing text content
+            const textContent = msg.querySelector('.markdown-text');
+            if (textContent) {
+              textContent.style.display = 'block';
+            }
+          }
+        }
+      }
+    } else {
+      // Not a recipe message - just show any text content
       const textContent = msg.querySelector('.markdown-text');
       if (textContent) {
         textContent.style.display = 'block';
-        console.log('Ensuring non-recipe content is visible in card view');
       }
+
+      // Hide any recipe cards
+      const recipeCards = msg.querySelectorAll('.recipe-card');
+      recipeCards.forEach(card => {
+        card.style.display = 'none';
+      });
     }
   });
+}
 
-  // Now force rerendering of all messages to ensure proper content display
-  if (mode === 'card') {
-    console.log('Forcing rerender of all recipe messages in card view format');
-    forceRenderAllRecipeMessages();
-  } else {
-    console.log('Forcing rerender of all recipe messages in text view format');
-    forceRenderAllTextMessages();
+assistantMessages.forEach((msg, index) => {
+  // Skip any message that has the spinner
+  if (msg.querySelector('.spinner')) {
+    console.log(`Message ${index} contains spinner, skipping`);
+    return;
   }
 
-  // Rerender assistant messages with the new view
-  console.log('Found chat window, searching for messages for content updates');
-  const assistantMessages = chatWindow.querySelectorAll('.assistant-message');
-  console.log(`Found ${assistantMessages.length} assistant messages to check for recipes`);
+  // Check if this message contains multiple recipes
+  if (msg.hasAttribute('data-recipe-indices')) {
+    // Get the recipe indices for this message
+    const recipeIndicesStr = msg.getAttribute('data-recipe-indices');
+    let recipeIndices = recipeIndicesStr.split(',').map(idx => parseInt(idx));
 
-  let recipeCount = 0;
+    console.log(`Message ${index} has recipes with indices: ${recipeIndicesStr}`);
 
-  // ? Focus here and text function on the logs? 
-  // Helper to render all recipe messages as cards
-  function forceRenderAllRecipeMessages() {
-    allMessages.forEach((msg, i) => {
-      // Check if message contains any recipe attributes 
-      const hasRecipeAttributes = msg.hasAttribute('data-recipe-index') ||
-        msg.hasAttribute('data-recipe-indices') ||
-        msg.hasAttribute('data-is-recipe') ||
-        msg.hasAttribute('data-is-recipes');
-
-      // Only if it's already marked as a recipe, show the card view                      
-      if (hasRecipeAttributes) {
-        console.log(`Forcing card render for message ${i}`);
-
-        // Clear the existing message content and rebuild it
-        if (msg.hasAttribute('data-recipe-indices')) {
-          // Get indices and rebuild all recipes in card view
-          const indicesStr = msg.getAttribute('data-recipe-indices');
-          console.log(`***DEBUG: Raw indices string: "${indicesStr}"`);
-
-          const indices = indicesStr.split(',').map(i => parseInt(i, 10));
-          console.log(`Message ${i} has recipe indices: ${indices}`);
-
-          // Create new content
-          const validIndices = indices.filter(idx => {
-            const isValid = parsedRecipes[idx] !== undefined;
-            console.log(`Index ${idx} is ${isValid ? 'valid' : 'invalid'}`);
-            return isValid;
-          });
-
-          if (validIndices.length > 0) {
-            console.log(`Building card view for ${validIndices.length} recipes`);
-
-            // First, save the existing indices
-            const existingIndices = msg.getAttribute('data-recipe-indices');
-            const recipeCount = msg.getAttribute('data-recipe-count') || validIndices.length;
-
-            console.log(`***CARD DEBUG: Message has data-recipe-indices: ${existingIndices}`);
-            console.log(`***CARD DEBUG: Message has data-recipe-count: ${recipeCount}`);
-
-            // Clear and rebuild
-            msg.innerHTML = '';
-
-            // Re-add the attributes
-            msg.setAttribute('data-recipe-indices', existingIndices);
-            msg.setAttribute('data-is-recipes', 'true');
-            msg.setAttribute('data-recipe-count', recipeCount);
-            msg.classList.add('card-view');
-            msg.classList.remove('text-view');
-
-            // Rebuild all recipe containers
-            validIndices.forEach((recipeIndex, idx) => {
-              const recipe = parsedRecipes[recipeIndex];
-              if (recipe) {
-                console.log(`***CARD DEBUG: Processing recipe ${idx + 1}/${validIndices.length} with index ${recipeIndex}`);
-                console.log(`***CARD DEBUG: Recipe title: ${recipe.metadata?.recipe_title || 'Unknown'}`);
-
-                // Create a container for this recipe
-                const recipeContainer = document.createElement('div');
-                recipeContainer.className = 'recipe-container';
-                recipeContainer.setAttribute('data-recipe-index', recipeIndex);
-
-                try {
-                  const card = createRecipeCard(recipe);
-                  recipeContainer.appendChild(card);
-                } catch (e) {
-                  console.error(`Error creating card for recipe ${idx}:`, e);
-                  const formattedText = recipe.text.replace(/\\n/g, '\n').replace(/\*\*/g, '');
-                  recipeContainer.innerHTML = marked.parse(formattedText);
-                }
-
-                msg.appendChild(recipeContainer);
-                console.log(`Added recipe ${idx + 1}/${validIndices.length} to card view`);
-              }
-            });
-          }
-        } else {
-          // Handle single recipe case
-          const recipeIndex = parseInt(msg.getAttribute('data-recipe-index') || -1);
-          if (recipeIndex >= 0 && parsedRecipes[recipeIndex]) {
-            // Hide any existing text content
-            const textContent = msg.querySelector('.markdown-text');
-            if (textContent) {
-              textContent.style.display = 'none';
-            }
-
-            // Make sure we're in card view mode
-            msg.classList.add('card-view');
-            msg.classList.remove('text-view');
-
-            // If there's no card yet, create one
-            if (!msg.querySelector('.recipe-card')) {
-              // Create a new card
-              const recipe = parsedRecipes[recipeIndex];
-              try {
-                const card = createRecipeCard(recipe);
-                msg.innerHTML = '';
-                msg.appendChild(card);
-              } catch (e) {
-                console.error(`Error creating card:`, e);
-              }
-            } else {
-              // Show existing cards
-              const recipeCards = msg.querySelectorAll('.recipe-card');
-              recipeCards.forEach(card => {
-                card.style.display = 'block';
-              });
-            }
-          }
-        }
+    if (recipeIndices.length > 0) {
+      // Check for duplicate recipe indices (a common issue)
+      const uniqueIndices = [...new Set(recipeIndices)];
+      if (uniqueIndices.length < recipeIndices.length) {
+        console.log(`Detected duplicate recipe indices - using unique indices instead of ${recipeIndices}`);
+        recipeIndices = uniqueIndices;
       }
-    });
-  }
 
-  // ? Focus here and card function above on the logs? 
-  // Helper to render all messages as text
-  function forceRenderAllTextMessages() {
-    allMessages.forEach((msg, i) => {
-      // Check if message contains any recipe attributes 
-      const hasRecipeAttributes = msg.hasAttribute('data-recipe-index') ||
-        msg.hasAttribute('data-recipe-indices') ||
-        msg.hasAttribute('data-is-recipe') ||
-        msg.hasAttribute('data-is-recipes');
+      // Filter to just valid indices
+      const validIndices = recipeIndices.filter(idx => parsedRecipes[idx]);
+      if (validIndices.length < recipeIndices.length) {
+        console.log(`Some recipe indices were invalid, using only valid ones: ${validIndices}`);
+        recipeIndices = validIndices;
+      }
 
-      if (hasRecipeAttributes) {
-        console.log(`Forcing text render for message ${i}`);
+      // Store recipe count for reference
+      const recipeCount = validIndices.length;
+      msg.setAttribute('data-recipe-count', recipeCount);
 
-        // Clear the existing message content and rebuild it using text format
-        if (msg.hasAttribute('data-recipe-indices')) {
-          // Get indices and rebuild all recipes in text view
-          const indicesStr = msg.getAttribute('data-recipe-indices');
-          console.log(`***TEXT DEBUG: Raw indices string: "${indicesStr}"`);
-
-          const indices = indicesStr.split(',').map(i => parseInt(i, 10));
-          console.log(`Message ${i} has recipe indices: ${indices}`);
-
-          // Create new content
-          const validIndices = indices.filter(idx => {
-            const isValid = parsedRecipes[idx] !== undefined;
-            console.log(`Index ${idx} is ${isValid ? 'valid' : 'invalid'} for text view`);
-            return isValid;
-          });
-
-          if (validIndices.length > 0) {
-            console.log(`Building text view for ${validIndices.length} recipes`);
-
-            // First, save the existing indices
-            const existingIndices = msg.getAttribute('data-recipe-indices');
-            const recipeCount = msg.getAttribute('data-recipe-count') || validIndices.length;
-
-            console.log(`***TEXT DEBUG: Message has data-recipe-indices: ${existingIndices}`);
-            console.log(`***TEXT DEBUG: Message has data-recipe-count: ${recipeCount}`);
-
-            // Clear and rebuild
-            msg.innerHTML = '';
-
-            // Re-add the attributes
-            msg.setAttribute('data-recipe-indices', existingIndices);
-            msg.setAttribute('data-is-recipes', 'true');
-            msg.setAttribute('data-recipe-count', recipeCount);
-            msg.classList.add('text-view');
-            msg.classList.remove('card-view');
-
-            // Create a common container if multiple recipes
-            const recipesWrapper = document.createElement('div');
-            recipesWrapper.className = 'markdown-text';
-            msg.appendChild(recipesWrapper);
-
-            // Rebuild all recipe containers
-            validIndices.forEach((recipeIndex, idx) => {
-              const recipe = parsedRecipes[recipeIndex];
-              if (recipe) {
-                console.log(`***TEXT DEBUG: Processing recipe ${idx + 1}/${validIndices.length} with index ${recipeIndex}`);
-                console.log(`***TEXT DEBUG: Recipe title: ${recipe.metadata?.recipe_title || 'Unknown'}`);
-
-                // Create a container for this recipe
-                const recipeContainer = document.createElement('div');
-                recipeContainer.className = 'recipe-container';
-                recipeContainer.setAttribute('data-recipe-index', recipeIndex);
-
-                try {
-                  // Make sure we have complete recipe text
-                  const markdown = formatRecipeAsMarkdown(recipe);
-                  const formattedText = markdown.replace(/\\n/g, '\n');
-                  console.log(`***TEXT DEBUG: Recipe text snippet: ${formattedText.substring(0, 100)}...`);
-                  recipeContainer.innerHTML = marked.parse(formattedText);
-                } catch (e) {
-                  console.error(`Error formatting markdown for recipe ${idx}:`, e);
-                  const formattedText = recipe.text.replace(/\\n/g, '\n').replace(/\*\*/g, '');
-                  recipeContainer.innerHTML = marked.parse(formattedText);
-                }
-
-                // Add a divider between recipes except for the last one
-                if (idx < validIndices.length - 1) {
-                  const divider = document.createElement('hr');
-                  divider.style.margin = '20px 0';
-                  recipeContainer.appendChild(divider);
-                }
-
-                recipesWrapper.appendChild(recipeContainer);
-                console.log(`Added recipe ${idx + 1}/${validIndices.length} to text view`);
-              }
-            });
-          }
-        } else {
-          // Handle single recipe case
-          const recipeIndex = parseInt(msg.getAttribute('data-recipe-index') || -1);
-          if (recipeIndex >= 0 && parsedRecipes[recipeIndex]) {
-            // Make sure we're in text view mode
-            msg.classList.add('text-view');
-            msg.classList.remove('card-view');
-
-            // Hide any recipe cards
-            const recipeCards = msg.querySelectorAll('.recipe-card');
-            recipeCards.forEach(card => {
-              card.style.display = 'none';
-            });
-
-            // If there's no text content yet, create it
-            if (!msg.querySelector('.markdown-text')) {
-              // Create text content
-              const recipe = parsedRecipes[recipeIndex];
-              try {
-                const markdown = formatRecipeAsMarkdown(recipe);
-                const formattedText = markdown.replace(/\\n/g, '\n');
-
-                // Create a wrapper for the markdown content
-                const markdownWrapper = document.createElement('div');
-                markdownWrapper.className = 'markdown-text';
-                markdownWrapper.innerHTML = marked.parse(formattedText);
-
-                // Clear existing content and add the wrapper
-                msg.innerHTML = '';
-                msg.appendChild(markdownWrapper);
-              } catch (e) {
-                console.error(`Error creating text view:`, e);
-              }
-            } else {
-              // Show existing text content
-              const textContent = msg.querySelector('.markdown-text');
-              if (textContent) {
-                textContent.style.display = 'block';
-              }
-            }
-          }
-        }
+      // Based on mode, call appropriate render function
+      if (mode === 'card') {
+        console.log(`Using card view mode for message ${index} with ${recipeCount} recipes`);
+        // We don't need to do anything here - forceRenderAllRecipeMessages will handle it
       } else {
-        // Not a recipe message - just show any text content
-        const textContent = msg.querySelector('.markdown-text');
-        if (textContent) {
-          textContent.style.display = 'block';
-        }
-
-        // Hide any recipe cards
-        const recipeCards = msg.querySelectorAll('.recipe-card');
-        recipeCards.forEach(card => {
-          card.style.display = 'none';
-        });
+        console.log(`Using text view mode for message ${index} with ${recipeCount} recipes`);
+        // We don't need to do anything here - forceRenderAllTextMessages will handle it
       }
-    });
+    }
   }
+  // Check for single recipe (legacy format)
+  else {
+    const recipeIndex = parseInt(msg.getAttribute('data-recipe-index') || -1);
+    console.log(`Message ${index} has single recipe index: ${recipeIndex}`);
 
-  assistantMessages.forEach((msg, index) => {
-    // Skip any message that has the spinner
-    if (msg.querySelector('.spinner')) {
-      console.log(`Message ${index} contains spinner, skipping`);
-      return;
-    }
+    if (recipeIndex >= 0 && parsedRecipes[recipeIndex]) {
+      recipeCount++;
+      console.log(`Found recipe data for message ${index}`);
 
-    // Check if this message contains multiple recipes
-    if (msg.hasAttribute('data-recipe-indices')) {
-      // Get the recipe indices for this message
-      const recipeIndicesStr = msg.getAttribute('data-recipe-indices');
-      let recipeIndices = recipeIndicesStr.split(',').map(idx => parseInt(idx));
-
-      console.log(`Message ${index} has recipes with indices: ${recipeIndicesStr}`);
-
-      if (recipeIndices.length > 0) {
-        // Check for duplicate recipe indices (a common issue)
-        const uniqueIndices = [...new Set(recipeIndices)];
-        if (uniqueIndices.length < recipeIndices.length) {
-          console.log(`Detected duplicate recipe indices - using unique indices instead of ${recipeIndices}`);
-          recipeIndices = uniqueIndices;
-        }
-
-        // Filter to just valid indices
-        const validIndices = recipeIndices.filter(idx => parsedRecipes[idx]);
-        if (validIndices.length < recipeIndices.length) {
-          console.log(`Some recipe indices were invalid, using only valid ones: ${validIndices}`);
-          recipeIndices = validIndices;
-        }
-
-        // Store recipe count for reference
-        const recipeCount = validIndices.length;
-        msg.setAttribute('data-recipe-count', recipeCount);
-
-        // Based on mode, call appropriate render function
-        if (mode === 'card') {
-          console.log(`Using card view mode for message ${index} with ${recipeCount} recipes`);
-          // We don't need to do anything here - forceRenderAllRecipeMessages will handle it
-        } else {
-          console.log(`Using text view mode for message ${index} with ${recipeCount} recipes`);
-          // We don't need to do anything here - forceRenderAllTextMessages will handle it
-        }
-      }
-    }
-    // Check for single recipe (legacy format)
-    else {
-      const recipeIndex = parseInt(msg.getAttribute('data-recipe-index') || -1);
-      console.log(`Message ${index} has single recipe index: ${recipeIndex}`);
-
-      if (recipeIndex >= 0 && parsedRecipes[recipeIndex]) {
-        recipeCount++;
-        console.log(`Found recipe data for message ${index}`);
-
-        // Based on mode, set appropriate class
-        if (mode === 'card') {
-          msg.classList.add('card-view');
-          msg.classList.remove('text-view');
-        } else {
-          msg.classList.add('text-view');
-          msg.classList.remove('card-view');
-        }
+      // Based on mode, set appropriate class
+      if (mode === 'card') {
+        msg.classList.add('card-view');
+        msg.classList.remove('text-view');
       } else {
-        console.log(`No recipe data found for message ${index}`);
-        // For messages without recipe data, mark them with a class
-        msg.classList.add('non-recipe-message');
+        msg.classList.add('text-view');
+        msg.classList.remove('card-view');
       }
+    } else {
+      console.log(`No recipe data found for message ${index}`);
+      // For messages without recipe data, mark them with a class
+      msg.classList.add('non-recipe-message');
     }
-  });
+  }
+});
 
-  console.log(`Processed ${recipeCount} recipe messages out of ${assistantMessages.length} total messages`);
+console.log(`Processed ${recipeCount} recipe messages out of ${assistantMessages.length} total messages`);
 
   // No test cards in production
 }
@@ -1500,15 +1408,9 @@ function switchView(mode) {
 // TODO: Create recipe card from template
 function createRecipeCard(recipeData) {
   // TODO: Get template
-  const template = document.getElementById('recipe-card-template');
-  if (!template) {
-    console.error('Recipe card template not found');
-    return document.createTextNode('Error: Template not found');
-  }
 
   // TODO: Clone the template content
-  const card = document.importNode(template.content, true);
-  // ! End Get template
+
   // Add margins to all text content elements to prevent text overflow
   const textElements = card.querySelectorAll('p, li, h3, h4');
   textElements.forEach(el => {
@@ -1523,29 +1425,8 @@ function createRecipeCard(recipeData) {
   // TODO: Update the recipe card template
   try {
     // TODO: Extract recipe information
-    // ! Students add this variable
-    // let recipe, nutrition, shopping_list, factoids;
-    // recipe = recipeData.recipe || recipeData;
-    let recipe = recipeData.recipe || recipeData;
-
-    // ? Pull out recipe, nutrition, shopping_list, factoids?
-    // // ? Pull out nutrition, shopping_list, factoids?
-    // // Handle different possible data structures
-    // if (recipeData.recipe && typeof recipeData.recipe === 'object') {
-    //   // * Log out recipeData
-    //   console.log('Recipe data:', recipeData);
-    //   // Structure from recipes_storage_and_retrieval_v2.py
-    //   recipe = recipeData.recipe;
-    //   nutrition = recipeData.nutrition || '';
-    //   shopping_list = recipeData.shopping_list || '';
-    //   factoids = recipeData.factoids || '';
-    // } else {
-    //   // Direct content or different structure
-    //   recipe = recipeData;
-    // }
 
     // Clean up title by removing numbering prefixes and any **
-    // ! Students are given this with an explanation
     let title = recipe.metadata?.recipe_title || 'Recipe';
     title = title.replace(/^\d+\.\s*/, ''); // Remove any leading numbers like "2. "
     title = title.replace(/\*\*/g, ''); // Remove any ** from title
@@ -1566,9 +1447,7 @@ function createRecipeCard(recipeData) {
       type = type.replace(/\*\*/g, '');
       typeEl.textContent = type;
     } else if (typeEl) {
-      // ? maybe hide instead of clearing?
-      // typeEl.style.display = 'none';
-      typeEl.textContent = '';
+      typeEl.style.display = 'none';
     }
 
     if (cuisineEl && recipe.metadata?.cuisine) {
@@ -1579,9 +1458,7 @@ function createRecipeCard(recipeData) {
       cuisine = cuisine.replace(/\*\*/g, '');
       cuisineEl.textContent = cuisine;
     } else if (cuisineEl) {
-      // ? maybe hide instead of clearing?
-      // cuisineEl.style.display = 'none';
-      cuisineEl.textContent = '';
+      cuisineEl.style.display = 'none';
     }
 
     if (considerationsEl) {
@@ -1596,208 +1473,42 @@ function createRecipeCard(recipeData) {
         considerations = considerations.replace(/\*\*/g, '');
         considerationsEl.textContent = considerations;
       } else {
-        // ? maybe hide instead of clearing?
-        // considerationsEl.style.display = 'none';
-        considerationsEl.textContent = '';
+        considerationsEl.style.display = 'none';
       }
     }
 
     // TODO: Populate ingredients
-    const ingredientsContainer = card.querySelector('.recipe-ingredients');
-    if (ingredientsContainer) {
-      const ingredients = recipe.metadata?.ingredients || [];
-      if (Array.isArray(ingredients) && ingredients.length > 0) {
-        const ul = document.createElement('ul');
-        ingredients.forEach(ing => {
-          const li = document.createElement('li');
-          li.textContent = ing;
-          ul.appendChild(li);
-        });
-        ingredientsContainer.appendChild(ul);
-      } else {
-        // Try to extract ingredients from text
-        const ingredientsSection = extractSection(recipe.text, 'Ingredients');
-        if (ingredientsSection) {
-          ingredientsContainer.innerHTML = marked.parse(ingredientsSection);
-        } else {
-          ingredientsContainer.textContent = 'No ingredients listed';
-        }
-      }
-    }
 
     // TODO: Add instructions
-    const instructionsContent = card.querySelector('.instructions-content');
-    if (instructionsContent) {
-      // Try to extract instructions from recipe text
-      const instructionsSection = extractSection(recipe.text, 'Instructions');
-      let instructionsText = '';
 
-      if (instructionsSection) {
-        instructionsText = instructionsSection;
-      } else {
-        // Fallback to full text if no specific instructions section
-        instructionsText = recipe.text || '';
-      }
+    // Clean up instructions before rendering
+    // Handle escaped newlines
+    instructionsText = instructionsText.replace(/\\n/g, '\n');
 
-      // Clean up instructions before rendering
-      // Handle escaped newlines
-      instructionsText = instructionsText.replace(/\\n/g, '\n');
+    // Remove leading asterisks that might appear from markdown formatting
+    instructionsText = instructionsText.replace(/^\s*\*\*\s*$/gm, '');
 
-      // Remove leading asterisks that might appear from markdown formatting
-      instructionsText = instructionsText.replace(/^\s*\*\*\s*$/gm, '');
+    // Add some space between paragraphs for better readability
+    instructionsText = instructionsText.replace(/\n\n/g, '\n\n\n');
 
-      // Add some space between paragraphs for better readability
-      instructionsText = instructionsText.replace(/\n\n/g, '\n\n\n');
+    // Render as markdown
+    instructionsContent.innerHTML = marked.parse(instructionsText);
 
-      // Render as markdown
-      instructionsContent.innerHTML = marked.parse(instructionsText);
-
-      // Add inline styles to ensure content is properly contained
-      instructionsContent.style.padding = "0 10px";
-      instructionsContent.style.boxSizing = "border-box";
-      instructionsContent.style.width = "100%";
-      instructionsContent.style.wordWrap = "break-word";
-      instructionsContent.style.overflowWrap = "break-word";
-    }
-
-    // Add nutrition info - only if available
-    // ? Did I take these out or did they not exist?
-    // const nutritionSection = card.querySelector('.recipe-nutrition');
-    // const nutritionContent = card.querySelector('.nutrition-content');
-
-    // if (nutritionSection && nutritionContent) {
-    //   // Check if we have nutrition info
-    //   let hasNutrition = false;
-    //   let nutritionText = '';
-
-    //   if (nutrition) {
-    //     try {
-    //       // Try to parse if it's a JSON string
-    //       if (typeof nutrition === 'string' && nutrition.trim().startsWith('{')) {
-    //         const parsedNutrition = JSON.parse(nutrition);
-    //         nutritionText = Object.entries(parsedNutrition)
-    //           .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
-    //           .join('<br>');
-    //         hasNutrition = true;
-    //       } else if (nutrition.trim().length > 0) {
-    //         nutritionText = nutrition;
-    //         hasNutrition = true;
-    //       }
-    //     } catch (e) {
-    //       // Use as-is if not parseable
-    //       if (nutrition.trim().length > 0) {
-    //         nutritionText = nutrition;
-    //         hasNutrition = true;
-    //       }
-    //     }
-    //   }
-
-    //   // Find nutrition section in text if not provided directly
-    //   if (!hasNutrition) {
-    //     const nutritionSection = extractSection(recipe.text, 'Nutrition');
-    //     if (nutritionSection) {
-    //       nutritionText = nutritionSection;
-    //       hasNutrition = true;
-    //     }
-    //   }
-
-    //   if (hasNutrition) {
-    //     nutritionContent.innerHTML = nutritionText;
-    //   } else {
-    //     // Hide the entire nutrition section if no info available
-    //     nutritionSection.style.display = 'none';
-    //   }
-    // }
-
-    // // Set up shopping list button
-    // const shoppingListBtn = card.querySelector('.shopping-list-btn');
-    // if (shoppingListBtn && shopping_list) {
-    //   shoppingListBtn.addEventListener('click', () => {
-    //     showModal('Shopping List', shopping_list);
-    //   });
-    // } else if (shoppingListBtn) {
-    //   shoppingListBtn.style.display = 'none';
-    // }
-
-    // // Set up factoids button
-    // const factoidsBtn = card.querySelector('.factoids-btn');
-    // if (factoidsBtn && factoids) {
-    //   factoidsBtn.addEventListener('click', () => {
-    //     showModal('Interesting Facts', factoids);
-    //   });
-    // } else if (factoidsBtn) {
-    //   factoidsBtn.style.display = 'none';
-    // }
+    // Add inline styles to ensure content is properly contained
+    instructionsContent.style.padding = "0 10px";
+    instructionsContent.style.boxSizing = "border-box";
+    instructionsContent.style.width = "100%";
+    instructionsContent.style.wordWrap = "break-word";
+    instructionsContent.style.overflowWrap = "break-word";
+  }
 
     // TODO: Set up source info panel toggle
-    const sourceToggle = card.querySelector('.source-info-toggle');
-    const sourcePanel = card.querySelector('.source-info-panel');
-    const sourceContent = card.querySelector('.source-content');
 
-    if (sourceToggle && sourcePanel && sourceContent) {
-      // Populate source info - only show if we have real source data
-      let sourceInfo = '';
-      let hasSourceInfo = false;
+    // TODO: Return the card
 
-      if (recipe.metadata) {
-        // Start with explicit source or title
-        let sourceValue = recipe.metadata.source || recipe.metadata.title || 'ChefBoost AI';
+    // TODO: Catch any errors and print a message in a div within the recipe card
 
-        // If source is just "ChefBoost AI", try to extract book references from text
-        if ((sourceValue === 'ChefBoost AI' || sourceValue === 'Generated by ChefBoost AI') && recipe.text) {
-          const bookMatch = recipe.text.match(/(?:from|in)\s+(?:the\s+)?(?:book|cookbook)?\s*["']?([^"'\n.]+)["']?/i);
-          if (bookMatch && bookMatch[1].trim()) {
-            sourceValue = bookMatch[1].trim();
-          }
-        }
-
-        sourceInfo += `<p><strong>Source:</strong> ${sourceValue}</p>`;
-        hasSourceInfo = true;
-
-        if (recipe.metadata.authors) {
-          sourceInfo += `<p><strong>Author(s):</strong> ${Array.isArray(recipe.metadata.authors)
-            ? recipe.metadata.authors.join(', ')
-            : recipe.metadata.authors}</p>`;
-          hasSourceInfo = true;
-        }
-
-        if (recipe.metadata.date_issued) {
-          sourceInfo += `<p><strong>Date:</strong> ${recipe.metadata.date_issued}</p>`;
-          hasSourceInfo = true;
-        }
-      }
-
-      // Always show source info, even if we need to create a default
-      if (!hasSourceInfo) {
-        // Add default source attribution when none exists
-        sourceInfo = `<p><strong>Source:</strong> Generated by ChefBoost AI</p>`;
-        sourceInfo += `<p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>`;
-        hasSourceInfo = true;
-      }
-
-      // Set content for the source panel
-      sourceContent.innerHTML = sourceInfo;
-
-      // Set up toggle functionality
-      sourceToggle.addEventListener('click', () => {
-        const isHidden = sourcePanel.classList.toggle('hidden');
-        sourceToggle.textContent = isHidden ? 'Source Info' : 'Hide Source';
-        sourceToggle.setAttribute('aria-expanded', String(!isHidden));
-      });
-
-      // Always show the source panel by default
-      sourcePanel.classList.remove('hidden');
-      sourceToggle.textContent = 'Hide Source';
-      sourceToggle.setAttribute('aria-expanded', 'true');
-    }
-
-    return card;
-  } catch (e) {
-    console.error('Error creating recipe card:', e);
-    const errorDiv = document.createElement('div');
-    errorDiv.textContent = 'Error rendering recipe card';
-    return errorDiv;
-  }
+// * This is the closing curly brace for the createRecipeCard function:
 }
 
 // Helper function to extract sections from recipe text
@@ -1813,22 +1524,9 @@ function extractSection(text, sectionName) {
 }
 
 // Format recipe as markdown for text view
-// ? Take out ai augmentations. How much of this is still needed?
 function formatRecipeAsMarkdown(recipeData) {
   try {
-    // Extract recipe information
-    // let recipe, nutrition, shopping_list, factoids;
     let recipe = recipeData.recipe || recipeData;
-    // * Removed also from card version
-    // Handle different possible data structures
-    // if (recipeData.recipe && typeof recipeData.recipe === 'object') {
-    //   recipe = recipeData.recipe;
-    //   nutrition = recipeData.nutrition || '';
-    //   shopping_list = recipeData.shopping_list || '';
-    //   factoids = recipeData.factoids || '';
-    // } else {
-    //   recipe = recipeData;
-    // }
 
     // If it's already formatted text, just return it after cleaning up double asterisks and escaped newlines
     if (typeof recipeData === 'string') {
@@ -1903,13 +1601,6 @@ function formatRecipeAsMarkdown(recipeData) {
       markdown += processedText.trim() + '\n\n';
     }
 
-    // * Removed also from card version also
-    // Add nutrition summary if available
-    // if (nutrition) {
-    //   const cleanNutrition = nutrition.replace(/\*\*/g, '');
-    //   markdown += `### Nutrition Information\n${cleanNutrition}\n\n`;
-    // }
-
     // Always add source information
     markdown += '### Source Information\n';
 
@@ -1953,77 +1644,6 @@ function formatRecipeAsMarkdown(recipeData) {
     return 'Error displaying recipe information';
   }
 }
-
-// Modal for displaying shopping list and factoids
-// ! Take this out. Not including in UI after
-// function showModal(title, content) {
-//   // Remove any existing modals
-//   const existingModal = document.querySelector('.recipe-modal');
-//   if (existingModal) {
-//     existingModal.remove();
-//   }
-
-//   // Create modal elements
-//   const modal = document.createElement('div');
-//   modal.className = 'recipe-modal';
-
-//   const modalContent = document.createElement('div');
-//   modalContent.className = 'modal-content';
-
-//   const closeBtn = document.createElement('span');
-//   closeBtn.className = 'modal-close';
-//   closeBtn.innerHTML = '&times;';
-//   closeBtn.onclick = () => modal.remove();
-
-//   const titleEl = document.createElement('h3');
-//   titleEl.textContent = title;
-
-//   const contentEl = document.createElement('div');
-//   try {
-//     // Try to parse as JSON if it's a string
-//     if (typeof content === 'string') {
-//       try {
-//         if (content.trim().startsWith('{')) {
-//           const parsedContent = JSON.parse(content);
-//           if (typeof parsedContent === 'object') {
-//             let formattedContent = '';
-//             for (const [key, value] of Object.entries(parsedContent)) {
-//               formattedContent += `<p><strong>${key}:</strong> ${value}</p>`;
-//             }
-//             contentEl.innerHTML = formattedContent;
-//           } else {
-//             contentEl.innerHTML = marked.parse(content);
-//           }
-//         } else {
-//           contentEl.innerHTML = marked.parse(content);
-//         }
-//       } catch (e) {
-//         // Not JSON, use as markdown
-//         contentEl.innerHTML = marked.parse(content);
-//       }
-//     } else {
-//       contentEl.textContent = JSON.stringify(content, null, 2);
-//     }
-//   } catch (e) {
-//     contentEl.textContent = String(content);
-//   }
-
-//   // Assemble modal
-//   modalContent.appendChild(titleEl);
-//   modalContent.appendChild(contentEl);
-//   modal.appendChild(closeBtn);
-//   modal.appendChild(modalContent);
-
-//   // Add to document
-//   document.body.appendChild(modal);
-
-//   // Close modal when clicking outside content
-//   modal.addEventListener('click', (event) => {
-//     if (event.target === modal) {
-//       modal.remove();
-//     }
-//   });
-// }
 
 // Expose the main functions to the window object so they can be called from inline scripts
 // Make sure to do this synchronously at the end of file
