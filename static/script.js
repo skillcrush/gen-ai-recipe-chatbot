@@ -1,7 +1,6 @@
 // Recipe Card View - Course 3 Lesson 8 Enhancement
 
 // Global variables for view state - make sure they're accessible to window
-// ? When to add this to lesson? When talking about base.html file and ... Maybe have this be a quiz section?
 window.currentViewMode = 'text'; // or 'card'
 window.parsedRecipes = []; // Store parsed recipe data
 
@@ -285,7 +284,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log("Keepalive received, ignoring");
         return;
       }
-      // ? Add to lesson that these logs help us know what's going on?
+
       // Handle spinner marker
       if (rawData === "[spinner]") {
         console.log("Spinner marker received - ensuring spinner is visible");
@@ -1447,7 +1446,7 @@ function createRecipeCard(recipeData) {
       type = type.replace(/\*\*/g, '');
       typeEl.textContent = type;
     } else if (typeEl) {
-      typeEl.style.display = 'none';
+      typeEl.textContent = '';
     }
 
     if (cuisineEl && recipe.metadata?.cuisine) {
@@ -1458,7 +1457,7 @@ function createRecipeCard(recipeData) {
       cuisine = cuisine.replace(/\*\*/g, '');
       cuisineEl.textContent = cuisine;
     } else if (cuisineEl) {
-      cuisineEl.style.display = 'none';
+      cuisineEl.textContent = '';
     }
 
     if (considerationsEl) {
@@ -1473,7 +1472,7 @@ function createRecipeCard(recipeData) {
         considerations = considerations.replace(/\*\*/g, '');
         considerationsEl.textContent = considerations;
       } else {
-        considerationsEl.style.display = 'none';
+        considerationsEl.textContent = '';
       }
     }
 
