@@ -1,7 +1,6 @@
 // Recipe Card View - Course 3 Lesson 8 Enhancement
 
 // Global variables for view state - make sure they're accessible to window
-// ? When to add this to lesson? When talking about base.html file and ... Maybe have this be a quiz section?
 window.currentViewMode = 'text'; // or 'card'
 window.parsedRecipes = []; // Store parsed recipe data
 
@@ -9,18 +8,18 @@ window.parsedRecipes = []; // Store parsed recipe data
 document.addEventListener('DOMContentLoaded', function () {
   console.log('DOM loaded, initializing view controls');
 
-  // TODO: Initialize the toggle view switch
+  // Initialize the toggle view switch
   const viewToggleCheckbox = document.getElementById('view-toggle-checkbox');
   if (viewToggleCheckbox) {
     viewToggleCheckbox.checked = currentViewMode === 'card';
   }
 
-  // TODO: Initialize view toggle buttons in the index.html template
+  // Initialize view toggle buttons in the index.html template
   const minimizeBtn = document.getElementById('minimize-btn');
   const closeBtn = document.getElementById('close-btn');
   const chatContainer = document.querySelector('.chat-container');
 
-  // TODO: Set up window control buttons to minimize the chat window
+  // Set up window control buttons to minimize the chat window
   if (minimizeBtn) {
     minimizeBtn.addEventListener('click', function () {
       // Toggle minimized state
@@ -33,7 +32,6 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
           // Minimize window
           chatContainer.classList.add('minimized');
-          // ? Should the switch be to Rectangle 8640.png?
           minimizeBtn.querySelector('img').src = minimizeBtn.querySelector('img').src.replace('minimize-icon.png', 'open-icon.png');
           minimizeBtn.querySelector('.visually-hidden').textContent = 'restore';
         }
@@ -41,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // TODO: Set up window control buttons to close the chat window
+  // Set up window control buttons to close the chat window
   if (closeBtn) {
     closeBtn.addEventListener('click', function () {
       // Hide the chat container and view toggle
@@ -338,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log("Keepalive received, ignoring");
         return;
       }
-      // ? Add to lesson that these logs help us know what's going on?
+
       // Handle spinner marker
       if (rawData === "[spinner]") {
         console.log("Spinner marker received - ensuring spinner is visible");
@@ -1070,7 +1068,7 @@ function extractIngredients(text) {
   return ingredients.length > 0 ? ingredients : [];
 }
 
-// TODO: Define toggleView on the window object to ensure it's accessible globally
+// Define toggleView on the window object to ensure it's accessible globally
 window.toggleView = function (isChecked) {
   console.log("Toggle view called with:", isChecked);
   const mode = isChecked ? 'card' : 'text';
@@ -1085,7 +1083,7 @@ window.toggleView = function (isChecked) {
   }
 };
 
-// TODO: Function to switch between views
+// Function to switch between views
 function switchView(mode) {
   console.log(`%c Switching view to: ${mode}`, 'background: #0a0; color: white; font-size: 16px; padding: 4px;');
 
@@ -1111,7 +1109,7 @@ function switchView(mode) {
   document.body.classList.remove('card-view-mode', 'text-view-mode');
   document.body.classList.add(mode === 'card' ? 'card-view-mode' : 'text-view-mode');
 
-  // * Get the chat window 
+  // Get the chat window 
   const chatWindow = document.getElementById('chat-window');
   if (!chatWindow) {
     console.error('Chat window not found!');
@@ -1161,7 +1159,6 @@ function switchView(mode) {
 
   let recipeCount = 0;
 
-  // ? Focus here and text function on the logs? 
   // Helper to render all recipe messages as cards
   function forceRenderAllRecipeMessages() {
     allMessages.forEach((msg, i) => {
@@ -1275,7 +1272,6 @@ function switchView(mode) {
     });
   }
 
-  // ? Focus here and card function above on the logs? 
   // Helper to render all messages as text
   function forceRenderAllTextMessages() {
     allMessages.forEach((msg, i) => {
@@ -1497,18 +1493,18 @@ function switchView(mode) {
   // No test cards in production
 }
 
-// TODO: Create recipe card from template
+// Create recipe card from template
 function createRecipeCard(recipeData) {
-  // TODO: Get template
+  // Get template
   const template = document.getElementById('recipe-card-template');
   if (!template) {
     console.error('Recipe card template not found');
     return document.createTextNode('Error: Template not found');
   }
 
-  // TODO: Clone the template content
+  // Clone the template content
   const card = document.importNode(template.content, true);
-  // ! End Get template
+
   // Add margins to all text content elements to prevent text overflow
   const textElements = card.querySelectorAll('p, li, h3, h4');
   textElements.forEach(el => {
@@ -1520,32 +1516,11 @@ function createRecipeCard(recipeData) {
     el.style.maxWidth = "100%";
   });
 
-  // TODO: Update the recipe card template
+  // Update the recipe card template
   try {
-    // TODO: Extract recipe information
-    // ! Students add this variable
-    // let recipe, nutrition, shopping_list, factoids;
-    // recipe = recipeData.recipe || recipeData;
     let recipe = recipeData.recipe || recipeData;
 
-    // ? Pull out recipe, nutrition, shopping_list, factoids?
-    // // ? Pull out nutrition, shopping_list, factoids?
-    // // Handle different possible data structures
-    // if (recipeData.recipe && typeof recipeData.recipe === 'object') {
-    //   // * Log out recipeData
-    //   console.log('Recipe data:', recipeData);
-    //   // Structure from recipes_storage_and_retrieval_v2.py
-    //   recipe = recipeData.recipe;
-    //   nutrition = recipeData.nutrition || '';
-    //   shopping_list = recipeData.shopping_list || '';
-    //   factoids = recipeData.factoids || '';
-    // } else {
-    //   // Direct content or different structure
-    //   recipe = recipeData;
-    // }
-
     // Clean up title by removing numbering prefixes and any **
-    // ! Students are given this with an explanation
     let title = recipe.metadata?.recipe_title || 'Recipe';
     title = title.replace(/^\d+\.\s*/, ''); // Remove any leading numbers like "2. "
     title = title.replace(/\*\*/g, ''); // Remove any ** from title
@@ -1566,8 +1541,6 @@ function createRecipeCard(recipeData) {
       type = type.replace(/\*\*/g, '');
       typeEl.textContent = type;
     } else if (typeEl) {
-      // ? maybe hide instead of clearing?
-      // typeEl.style.display = 'none';
       typeEl.textContent = '';
     }
 
@@ -1579,8 +1552,6 @@ function createRecipeCard(recipeData) {
       cuisine = cuisine.replace(/\*\*/g, '');
       cuisineEl.textContent = cuisine;
     } else if (cuisineEl) {
-      // ? maybe hide instead of clearing?
-      // cuisineEl.style.display = 'none';
       cuisineEl.textContent = '';
     }
 
@@ -1596,13 +1567,11 @@ function createRecipeCard(recipeData) {
         considerations = considerations.replace(/\*\*/g, '');
         considerationsEl.textContent = considerations;
       } else {
-        // ? maybe hide instead of clearing?
-        // considerationsEl.style.display = 'none';
         considerationsEl.textContent = '';
       }
     }
 
-    // TODO: Populate ingredients
+    // Populate ingredients
     const ingredientsContainer = card.querySelector('.recipe-ingredients');
     if (ingredientsContainer) {
       const ingredients = recipe.metadata?.ingredients || [];
@@ -1625,7 +1594,7 @@ function createRecipeCard(recipeData) {
       }
     }
 
-    // TODO: Add instructions
+    // Add instructions
     const instructionsContent = card.querySelector('.instructions-content');
     if (instructionsContent) {
       // Try to extract instructions from recipe text
@@ -1660,76 +1629,7 @@ function createRecipeCard(recipeData) {
       instructionsContent.style.overflowWrap = "break-word";
     }
 
-    // Add nutrition info - only if available
-    // ? Did I take these out or did they not exist?
-    // const nutritionSection = card.querySelector('.recipe-nutrition');
-    // const nutritionContent = card.querySelector('.nutrition-content');
-
-    // if (nutritionSection && nutritionContent) {
-    //   // Check if we have nutrition info
-    //   let hasNutrition = false;
-    //   let nutritionText = '';
-
-    //   if (nutrition) {
-    //     try {
-    //       // Try to parse if it's a JSON string
-    //       if (typeof nutrition === 'string' && nutrition.trim().startsWith('{')) {
-    //         const parsedNutrition = JSON.parse(nutrition);
-    //         nutritionText = Object.entries(parsedNutrition)
-    //           .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
-    //           .join('<br>');
-    //         hasNutrition = true;
-    //       } else if (nutrition.trim().length > 0) {
-    //         nutritionText = nutrition;
-    //         hasNutrition = true;
-    //       }
-    //     } catch (e) {
-    //       // Use as-is if not parseable
-    //       if (nutrition.trim().length > 0) {
-    //         nutritionText = nutrition;
-    //         hasNutrition = true;
-    //       }
-    //     }
-    //   }
-
-    //   // Find nutrition section in text if not provided directly
-    //   if (!hasNutrition) {
-    //     const nutritionSection = extractSection(recipe.text, 'Nutrition');
-    //     if (nutritionSection) {
-    //       nutritionText = nutritionSection;
-    //       hasNutrition = true;
-    //     }
-    //   }
-
-    //   if (hasNutrition) {
-    //     nutritionContent.innerHTML = nutritionText;
-    //   } else {
-    //     // Hide the entire nutrition section if no info available
-    //     nutritionSection.style.display = 'none';
-    //   }
-    // }
-
-    // // Set up shopping list button
-    // const shoppingListBtn = card.querySelector('.shopping-list-btn');
-    // if (shoppingListBtn && shopping_list) {
-    //   shoppingListBtn.addEventListener('click', () => {
-    //     showModal('Shopping List', shopping_list);
-    //   });
-    // } else if (shoppingListBtn) {
-    //   shoppingListBtn.style.display = 'none';
-    // }
-
-    // // Set up factoids button
-    // const factoidsBtn = card.querySelector('.factoids-btn');
-    // if (factoidsBtn && factoids) {
-    //   factoidsBtn.addEventListener('click', () => {
-    //     showModal('Interesting Facts', factoids);
-    //   });
-    // } else if (factoidsBtn) {
-    //   factoidsBtn.style.display = 'none';
-    // }
-
-    // TODO: Set up source info panel toggle
+    // Set up source info panel toggle
     const sourceToggle = card.querySelector('.source-info-toggle');
     const sourcePanel = card.querySelector('.source-info-panel');
     const sourceContent = card.querySelector('.source-content');
@@ -1791,6 +1691,7 @@ function createRecipeCard(recipeData) {
       sourceToggle.setAttribute('aria-expanded', 'true');
     }
 
+    // Return the card
     return card;
   } catch (e) {
     console.error('Error creating recipe card:', e);
@@ -1813,22 +1714,9 @@ function extractSection(text, sectionName) {
 }
 
 // Format recipe as markdown for text view
-// ? Take out ai augmentations. How much of this is still needed?
 function formatRecipeAsMarkdown(recipeData) {
   try {
-    // Extract recipe information
-    // let recipe, nutrition, shopping_list, factoids;
     let recipe = recipeData.recipe || recipeData;
-    // * Removed also from card version
-    // Handle different possible data structures
-    // if (recipeData.recipe && typeof recipeData.recipe === 'object') {
-    //   recipe = recipeData.recipe;
-    //   nutrition = recipeData.nutrition || '';
-    //   shopping_list = recipeData.shopping_list || '';
-    //   factoids = recipeData.factoids || '';
-    // } else {
-    //   recipe = recipeData;
-    // }
 
     // If it's already formatted text, just return it after cleaning up double asterisks and escaped newlines
     if (typeof recipeData === 'string') {
@@ -1903,13 +1791,6 @@ function formatRecipeAsMarkdown(recipeData) {
       markdown += processedText.trim() + '\n\n';
     }
 
-    // * Removed also from card version also
-    // Add nutrition summary if available
-    // if (nutrition) {
-    //   const cleanNutrition = nutrition.replace(/\*\*/g, '');
-    //   markdown += `### Nutrition Information\n${cleanNutrition}\n\n`;
-    // }
-
     // Always add source information
     markdown += '### Source Information\n';
 
@@ -1953,77 +1834,6 @@ function formatRecipeAsMarkdown(recipeData) {
     return 'Error displaying recipe information';
   }
 }
-
-// Modal for displaying shopping list and factoids
-// ! Take this out. Not including in UI after
-// function showModal(title, content) {
-//   // Remove any existing modals
-//   const existingModal = document.querySelector('.recipe-modal');
-//   if (existingModal) {
-//     existingModal.remove();
-//   }
-
-//   // Create modal elements
-//   const modal = document.createElement('div');
-//   modal.className = 'recipe-modal';
-
-//   const modalContent = document.createElement('div');
-//   modalContent.className = 'modal-content';
-
-//   const closeBtn = document.createElement('span');
-//   closeBtn.className = 'modal-close';
-//   closeBtn.innerHTML = '&times;';
-//   closeBtn.onclick = () => modal.remove();
-
-//   const titleEl = document.createElement('h3');
-//   titleEl.textContent = title;
-
-//   const contentEl = document.createElement('div');
-//   try {
-//     // Try to parse as JSON if it's a string
-//     if (typeof content === 'string') {
-//       try {
-//         if (content.trim().startsWith('{')) {
-//           const parsedContent = JSON.parse(content);
-//           if (typeof parsedContent === 'object') {
-//             let formattedContent = '';
-//             for (const [key, value] of Object.entries(parsedContent)) {
-//               formattedContent += `<p><strong>${key}:</strong> ${value}</p>`;
-//             }
-//             contentEl.innerHTML = formattedContent;
-//           } else {
-//             contentEl.innerHTML = marked.parse(content);
-//           }
-//         } else {
-//           contentEl.innerHTML = marked.parse(content);
-//         }
-//       } catch (e) {
-//         // Not JSON, use as markdown
-//         contentEl.innerHTML = marked.parse(content);
-//       }
-//     } else {
-//       contentEl.textContent = JSON.stringify(content, null, 2);
-//     }
-//   } catch (e) {
-//     contentEl.textContent = String(content);
-//   }
-
-//   // Assemble modal
-//   modalContent.appendChild(titleEl);
-//   modalContent.appendChild(contentEl);
-//   modal.appendChild(closeBtn);
-//   modal.appendChild(modalContent);
-
-//   // Add to document
-//   document.body.appendChild(modal);
-
-//   // Close modal when clicking outside content
-//   modal.addEventListener('click', (event) => {
-//     if (event.target === modal) {
-//       modal.remove();
-//     }
-//   });
-// }
 
 // Expose the main functions to the window object so they can be called from inline scripts
 // Make sure to do this synchronously at the end of file
