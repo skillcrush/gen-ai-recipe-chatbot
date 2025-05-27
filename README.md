@@ -1,12 +1,18 @@
 # Setting up to run scripts using the openai API with Python.
 
-The script will be run in a virtual environment. Start by creating a virtual environment:
+The script will be run in a virtual environment.
+
+The first step is to create a virtual environment. You can name the virtual environment `venv` or you can give it the same name as your project:
 
 On a Mac:
 `python3 -m venv chefboost-env`
 
+or: `python3 -m venv venv`
+
 On Windows:
 `python -m venv chefboost-env`
+
+or: `python -m venv venv`
 
 <br>
 After creating the virtual environment, you need to activate it:
@@ -86,11 +92,13 @@ This application includes deployment scripts and configuration for Google App En
 ### Deployment Steps
 
 1. **Run the deployment script**:
+
    ```bash
    python deploy.py
    ```
 
    This script will:
+
    - Check for required environment variables
    - Create necessary deployment files (secret.yaml, .gcloudignore)
    - Ensure gunicorn is added to requirements.txt
@@ -98,6 +106,7 @@ This application includes deployment scripts and configuration for Google App En
    - Deploy the application to Google App Engine
 
 2. **Follow the interactive prompts**:
+
    - Confirm deployment when prompted
    - Enter your Google Cloud Project ID
    - Select an App Engine region (default is us-central)
