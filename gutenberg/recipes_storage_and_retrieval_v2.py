@@ -660,7 +660,7 @@ def main():
         description="Loading and testing a vector store."
     )
     
-    parser.add_argument("-lb", "--load_books", type=bool, default=False, help="Search and load books.")
+    parser.add_argument("-lb", "--load_books", action="store_true", help="Search and load books.")
     parser.add_argument("-n", "--top_n", type=int, default=3, help="Number of books to load.")
     parser.add_argument("-sd", "--start_date", type=str, default="1950-01-01", help="Search start date.")
     parser.add_argument("-ed", "--end_date", type=str, default="2000-12-31", help="Search end date.")

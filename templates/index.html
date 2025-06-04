@@ -13,7 +13,6 @@
     /* Allow scrolling if needed */
     overflow-y: auto;
     /* Vertical scrollbar if content exceeds 60vh */
-    /* margin: 1rem 0; */
     padding: 1rem;
     background: #fafafa;
     border-radius: 4px;
@@ -137,9 +136,11 @@
     <section class="message-input-container">
       <form class="message-form" onsubmit="event.preventDefault(); event.stopPropagation(); sendQuery(); return false;">
         <div class="input-wrapper">
+          <label for="query" class="visually-hidden">Ask ChefBoost</label>
           <textarea id="query" placeholder="Ask ChefBoost..." autofocus required></textarea>
           <div class="view-toggle">
-            <label class="toggle-switch">
+            <label class="toggle-switch visually-hidden">
+              <span class="visually-hidden">Toggle switch</span>
               <input type="checkbox" id="view-toggle-checkbox" onclick="window.toggleView(this.checked)">
               <span class="slider"></span>
             </label>
