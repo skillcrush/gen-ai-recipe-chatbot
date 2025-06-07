@@ -16,7 +16,6 @@
     /* margin: 1rem 0; */
     padding: 1rem;
     background: #fafafa;
-    border-radius: 4px;
   }
 
   .assistant-message,
@@ -170,14 +169,14 @@
     <section class="chatbot-header">
       <div class="chatbot-content-wrapper">
         <h2>👋 ChefBoost!</h2>
-        <div class="open-close-icons">
-          <button type="button">
-            <img src="{{ url_for('static', filename='open-icon.png' ) }}" alt="" class="logo">
-            <span class="visually-hidden">open modal</span>
+        <div class="window-controls">
+          <button type="button" id="minimize-btn">
+            <img src="{{ url_for('static', filename='minimize-icon.png' ) }}" alt="" class="minimize-icon">
+            <span class="visually-hidden">minimize</span>
           </button>
-          <button type="button">
-            <img src="{{ url_for('static', filename='close-icon.png' ) }}" alt="" class="logo">
-            <span class="visually-hidden">close modal</span>
+          <button type="button" id="close-btn">
+            <img src="{{ url_for('static', filename='close-icon.png' ) }}" alt="" class="close-icon">
+            <span class="visually-hidden">close</span>
           </button>
         </div>
       </div>
@@ -189,17 +188,16 @@
     </section>
 
     <section class="message-input-container">
-      <div class="chatbot-content-wrapper">
-        <form class="message-form" onsubmit="event.preventDefault(); sendQuery();">
-          <div class="input-wrapper">
-            <textarea id="query" placeholder="Ask ChefBoost..." autofocus required></textarea>
-            <button type="submit" id="send-btn">
-              <img src="{{ url_for('static', filename='send-icon.png') }}" alt="Send" class="send-icon">
-              <span class="visually-hidden">Send prompt</span>
-            </button>
-          </div>
-        </form>
-      </div>
+      <form class="message-form" onsubmit="event.preventDefault(); sendQuery();">
+        <div class="input-wrapper">
+          <label for="query" class="visually-hidden">Ask ChefBoost</label>
+          <textarea id="query" placeholder="Ask ChefBoost..." autofocus required></textarea>
+          <button type="submit" id="send-btn">
+            <img src="{{ url_for('static', filename='send-icon.png') }}" alt="Send" class="send-icon">
+            <span class="visually-hidden">Send prompt</span>
+          </button>
+        </div>
+      </form>
     </section>
   </div>
 </div>
