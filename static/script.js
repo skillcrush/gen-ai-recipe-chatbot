@@ -4,7 +4,7 @@
 window.currentViewMode = 'text'; // or 'card'
 window.parsedRecipes = []; // Store parsed recipe data
 
-// Initialize view controls after DOM loads
+// Initialize view controls for toggle checkbox and minimize button after DOM loads
 document.addEventListener('DOMContentLoaded', function () {
   console.log('DOM loaded, initializing view controls');
 
@@ -14,12 +14,12 @@ document.addEventListener('DOMContentLoaded', function () {
     viewToggleCheckbox.checked = currentViewMode === 'card';
   }
 
-  // Initialize view toggle buttons
+  // Initialize view toggle buttons in the index.html template
   const minimizeBtn = document.getElementById('minimize-btn');
   const closeBtn = document.getElementById('close-btn');
   const chatContainer = document.querySelector('.chat-container');
 
-  // Set up window control buttons
+  // Set up window control buttons to minimize the chat window
   if (minimizeBtn) {
     minimizeBtn.addEventListener('click', function () {
       // Toggle minimized state
@@ -27,18 +27,19 @@ document.addEventListener('DOMContentLoaded', function () {
         if (chatContainer.classList.contains('minimized')) {
           // Restore window
           chatContainer.classList.remove('minimized');
-          minimizeBtn.querySelector('img').src = minimizeBtn.querySelector('img').src.replace('open-icon.png', 'open-icon.png');
+          minimizeBtn.querySelector('img').src = minimizeBtn.querySelector('img').src.replace('open-icon.png', 'minimize-icon.png');
           minimizeBtn.querySelector('.visually-hidden').textContent = 'minimize';
         } else {
           // Minimize window
           chatContainer.classList.add('minimized');
-          minimizeBtn.querySelector('img').src = minimizeBtn.querySelector('img').src.replace('open-icon.png', 'open-icon.png');
+          minimizeBtn.querySelector('img').src = minimizeBtn.querySelector('img').src.replace('minimize-icon.png', 'open-icon.png');
           minimizeBtn.querySelector('.visually-hidden').textContent = 'restore';
         }
       }
     });
   }
 
+  // Set up window control buttons to close the chat window
   if (closeBtn) {
     closeBtn.addEventListener('click', function () {
       // Hide the chat container and view toggle
@@ -115,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Set up chat agent button in header
+  // Set up chat agent button in header. Listen for clicks to show chat window and hide button in header
   const chatAgentBtn = document.getElementById('chat-agent-btn');
   if (chatAgentBtn) {
     chatAgentBtn.addEventListener('click', function () {
@@ -131,6 +132,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Override the default sendQuery function with our enhanced version
+  // Function also exists in the index.html template
+  // Function handles streaming responses, spinner display, and recipe detection
   console.log('Overriding sendQuery function');
   const originalSendQuery = window.sendQuery;
 
@@ -247,6 +250,10 @@ document.addEventListener('DOMContentLoaded', function () {
               text: recipeText,
               metadata: extractRecipeMetadata(recipeText)
             };
+
+            // * Log out the recipe's data
+            console.log("Recipe data:", recipeData);
+            console.table(recipeData);
 
             // Store the recipe
             const recipeIndex = parsedRecipes.length;
@@ -1509,21 +1516,9 @@ function createRecipeCard(recipeData) {
     el.style.maxWidth = "100%";
   });
 
+  // Update the recipe card template
   try {
-    // Extract recipe information
-    let recipe, nutrition, shopping_list, factoids;
-
-    // Handle different possible data structures
-    if (recipeData.recipe && typeof recipeData.recipe === 'object') {
-      // Structure from recipes_storage_and_retrieval_v2.py
-      recipe = recipeData.recipe;
-      nutrition = recipeData.nutrition || '';
-      shopping_list = recipeData.shopping_list || '';
-      factoids = recipeData.factoids || '';
-    } else {
-      // Direct content or different structure
-      recipe = recipeData;
-    }
+    let recipe = recipeData.recipe || recipeData;
 
     // Clean up title by removing numbering prefixes and any **
     let title = recipe.metadata?.recipe_title || 'Recipe';
@@ -1634,74 +1629,6 @@ function createRecipeCard(recipeData) {
       instructionsContent.style.overflowWrap = "break-word";
     }
 
-    // Add nutrition info - only if available
-    const nutritionSection = card.querySelector('.recipe-nutrition');
-    const nutritionContent = card.querySelector('.nutrition-content');
-
-    if (nutritionSection && nutritionContent) {
-      // Check if we have nutrition info
-      let hasNutrition = false;
-      let nutritionText = '';
-
-      if (nutrition) {
-        try {
-          // Try to parse if it's a JSON string
-          if (typeof nutrition === 'string' && nutrition.trim().startsWith('{')) {
-            const parsedNutrition = JSON.parse(nutrition);
-            nutritionText = Object.entries(parsedNutrition)
-              .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
-              .join('<br>');
-            hasNutrition = true;
-          } else if (nutrition.trim().length > 0) {
-            nutritionText = nutrition;
-            hasNutrition = true;
-          }
-        } catch (e) {
-          // Use as-is if not parseable
-          if (nutrition.trim().length > 0) {
-            nutritionText = nutrition;
-            hasNutrition = true;
-          }
-        }
-      }
-
-      // Find nutrition section in text if not provided directly
-      if (!hasNutrition) {
-        const nutritionSection = extractSection(recipe.text, 'Nutrition');
-        if (nutritionSection) {
-          nutritionText = nutritionSection;
-          hasNutrition = true;
-        }
-      }
-
-      if (hasNutrition) {
-        nutritionContent.innerHTML = nutritionText;
-      } else {
-        // Hide the entire nutrition section if no info available
-        nutritionSection.style.display = 'none';
-      }
-    }
-
-    // Set up shopping list button
-    const shoppingListBtn = card.querySelector('.shopping-list-btn');
-    if (shoppingListBtn && shopping_list) {
-      shoppingListBtn.addEventListener('click', () => {
-        showModal('Shopping List', shopping_list);
-      });
-    } else if (shoppingListBtn) {
-      shoppingListBtn.style.display = 'none';
-    }
-
-    // Set up factoids button
-    const factoidsBtn = card.querySelector('.factoids-btn');
-    if (factoidsBtn && factoids) {
-      factoidsBtn.addEventListener('click', () => {
-        showModal('Interesting Facts', factoids);
-      });
-    } else if (factoidsBtn) {
-      factoidsBtn.style.display = 'none';
-    }
-
     // Set up source info panel toggle
     const sourceToggle = card.querySelector('.source-info-toggle');
     const sourcePanel = card.querySelector('.source-info-panel');
@@ -1753,17 +1680,18 @@ function createRecipeCard(recipeData) {
 
       // Set up toggle functionality
       sourceToggle.addEventListener('click', () => {
-        sourcePanel.classList.toggle('hidden');
-        sourceToggle.textContent = sourcePanel.classList.contains('hidden')
-          ? 'Source Info'
-          : 'Hide Source';
+        const isHidden = sourcePanel.classList.toggle('hidden');
+        sourceToggle.textContent = isHidden ? 'Source Info' : 'Hide Source';
+        sourceToggle.setAttribute('aria-expanded', String(!isHidden));
       });
 
       // Always show the source panel by default
       sourcePanel.classList.remove('hidden');
       sourceToggle.textContent = 'Hide Source';
+      sourceToggle.setAttribute('aria-expanded', 'true');
     }
 
+    // Return the card
     return card;
   } catch (e) {
     console.error('Error creating recipe card:', e);
@@ -1788,18 +1716,7 @@ function extractSection(text, sectionName) {
 // Format recipe as markdown for text view
 function formatRecipeAsMarkdown(recipeData) {
   try {
-    // Extract recipe information
-    let recipe, nutrition, shopping_list, factoids;
-
-    // Handle different possible data structures
-    if (recipeData.recipe && typeof recipeData.recipe === 'object') {
-      recipe = recipeData.recipe;
-      nutrition = recipeData.nutrition || '';
-      shopping_list = recipeData.shopping_list || '';
-      factoids = recipeData.factoids || '';
-    } else {
-      recipe = recipeData;
-    }
+    let recipe = recipeData.recipe || recipeData;
 
     // If it's already formatted text, just return it after cleaning up double asterisks and escaped newlines
     if (typeof recipeData === 'string') {
@@ -1874,12 +1791,6 @@ function formatRecipeAsMarkdown(recipeData) {
       markdown += processedText.trim() + '\n\n';
     }
 
-    // Add nutrition summary if available
-    if (nutrition) {
-      const cleanNutrition = nutrition.replace(/\*\*/g, '');
-      markdown += `### Nutrition Information\n${cleanNutrition}\n\n`;
-    }
-
     // Always add source information
     markdown += '### Source Information\n';
 
@@ -1922,76 +1833,6 @@ function formatRecipeAsMarkdown(recipeData) {
     console.error('Error formatting recipe as markdown:', e);
     return 'Error displaying recipe information';
   }
-}
-
-// Modal for displaying shopping list and factoids
-function showModal(title, content) {
-  // Remove any existing modals
-  const existingModal = document.querySelector('.recipe-modal');
-  if (existingModal) {
-    existingModal.remove();
-  }
-
-  // Create modal elements
-  const modal = document.createElement('div');
-  modal.className = 'recipe-modal';
-
-  const modalContent = document.createElement('div');
-  modalContent.className = 'modal-content';
-
-  const closeBtn = document.createElement('span');
-  closeBtn.className = 'modal-close';
-  closeBtn.innerHTML = '&times;';
-  closeBtn.onclick = () => modal.remove();
-
-  const titleEl = document.createElement('h3');
-  titleEl.textContent = title;
-
-  const contentEl = document.createElement('div');
-  try {
-    // Try to parse as JSON if it's a string
-    if (typeof content === 'string') {
-      try {
-        if (content.trim().startsWith('{')) {
-          const parsedContent = JSON.parse(content);
-          if (typeof parsedContent === 'object') {
-            let formattedContent = '';
-            for (const [key, value] of Object.entries(parsedContent)) {
-              formattedContent += `<p><strong>${key}:</strong> ${value}</p>`;
-            }
-            contentEl.innerHTML = formattedContent;
-          } else {
-            contentEl.innerHTML = marked.parse(content);
-          }
-        } else {
-          contentEl.innerHTML = marked.parse(content);
-        }
-      } catch (e) {
-        // Not JSON, use as markdown
-        contentEl.innerHTML = marked.parse(content);
-      }
-    } else {
-      contentEl.textContent = JSON.stringify(content, null, 2);
-    }
-  } catch (e) {
-    contentEl.textContent = String(content);
-  }
-
-  // Assemble modal
-  modalContent.appendChild(titleEl);
-  modalContent.appendChild(contentEl);
-  modal.appendChild(closeBtn);
-  modal.appendChild(modalContent);
-
-  // Add to document
-  document.body.appendChild(modal);
-
-  // Close modal when clicking outside content
-  modal.addEventListener('click', (event) => {
-    if (event.target === modal) {
-      modal.remove();
-    }
-  });
 }
 
 // Expose the main functions to the window object so they can be called from inline scripts

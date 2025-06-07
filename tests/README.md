@@ -1,6 +1,6 @@
 # Test Suite
 
-This directory contains tests for the GARC application, focusing on multi-query retrieval and hybrid search functionality as implemented in the `07-query-translation` branch.
+This directory contains tests for the GARC application, focusing on multi-query retrieval and hybrid search functionality as implemented in the `c3l7-query-translation` branch.
 
 ## Test Files
 
@@ -33,11 +33,13 @@ python -m pytest tests/ -v
 These tests cover the following functionality:
 
 1. **Multi-Query Retrieval**
+
    - Query expansion using LLM to generate query variations
    - LineListOutputParser for processing multiline query variations
    - Integration with self-query retrieval
 
 2. **Hybrid Search**
+
    - Similarity search retrieval
    - Self-query retrieval with metadata filtering
    - Multi-query retrieval combining the above methods

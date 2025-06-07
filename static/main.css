@@ -5,7 +5,7 @@
   --primary-color: #FFFFFF;
   --secondary-color: #000000;
   --tertiary-color: #FFA6DE;
-  --message-text: #8D8D8D;
+  --message-text: #545454;
   --message-background: #EDEDED;
   --border-radius: 15px;
   --primary-font-family: "Mulish", sans-serif;
@@ -33,11 +33,16 @@ body {
   width: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  /* ? Is this the issue? Yes, this was the issue :) */
+  /* overflow: hidden; */
 }
 
 a {
   color: inherit;
+}
+
+button:hover {
+  cursor: pointer;
 }
 
 h1 {
@@ -91,7 +96,8 @@ h1 {
 .site-header .logo {
   height: 35px;
   line-height: 0;
-  margin: 50px 0 10px 0;
+  /* ? Reduced from 50px to 35px for mobile */
+  margin: 30px 0 10px 0;
 }
 
 .user-info {
@@ -141,6 +147,8 @@ main {
   background: url('joanie-simon-2r8BzVYZIeo-unsplash.png'), #f5e4f0;
   background-size: cover;
   background-position: center;
+  /* ? Increased from 50px to 140px for mobile */
+  height: calc(100vh - 140px);
   height: calc(100vh - 50px);
 }
 
@@ -150,10 +158,14 @@ main {
   height: 70vh;
   /* Allow scrolling within this container */
   overflow: auto;
+  /* ? If others don't work, try changing to align-items: flex-start; Maybe mobile only */
   align-items: center;
+  align-items: flex-start;
   justify-content: center;
   width: 95%;
   max-width: 1400px;
+  /* ? Maybe */
+  margin-bottom: 50px;
 }
 
 /* Chat container */
@@ -172,6 +184,7 @@ main {
   min-height: 400px;
   display: grid;
   grid-template-rows: auto 1fr auto;
+  /* ? remove for mobile */
   height: 70vh;
   background-color: white;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -202,12 +215,13 @@ main {
 
 .chatbot-header button {
   margin: 10px;
-  width: 16px;
+  /* * Removed 16px of margin */
   background-color: transparent;
   border: transparent;
 }
 
-.chatbot-header .logo {
+.chatbot-header .minimize-icon,
+.chatbot-header .close-icon {
   width: 16px;
 }
 
@@ -562,7 +576,7 @@ input:checked+.slider:before {
 
 /* Minimized chat container */
 .chat-container.minimized {
-  height: 60px !important;
+  height: 80px !important;
   min-height: 60px;
   overflow: hidden;
 }
@@ -595,6 +609,8 @@ input:checked+.slider:before {
   align-items: center;
   background-color: var(--tertiary-color);
   border: none;
+  /* ? space between button and login links */
+  margin-bottom: 16px;
   border-radius: 20px;
   padding: 8px 16px;
   cursor: pointer;
@@ -981,7 +997,14 @@ body.text-view-mode .assistant-message .markdown-text {
     width: 65%;
   }
 
+  main {
+    /* ? changed from 150px to 50px for larger screens */
+    height: calc(100vh - 50px);
+  }
+
   .chat-container {
+    /* ? moved from mobile to here */
+    height: 70vh;
     max-width: 90%;
   }
 

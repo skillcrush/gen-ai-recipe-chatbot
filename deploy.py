@@ -79,7 +79,7 @@ def create_gcloudignore():
     ignore_patterns = [
         ".git", ".gitignore", ".env", ".env.sample",
         "__pycache__/", "*.py[cod]", "*$py.class", "*.so",
-        ".Python", "env/", "venv/", "ENV/", "build/",
+        ".Python", "env/", "venv/", "chefboost-env/", "ENV/", "build/",
         "develop-eggs/", "dist/", "downloads/", "eggs/",
         ".eggs/", "lib/", "lib64/", "parts/", "sdist/", "var/",
         "*.egg-info/", ".installed.cfg", "*.egg", "*.db",

@@ -13,7 +13,6 @@
     /* Allow scrolling if needed */
     overflow-y: auto;
     /* Vertical scrollbar if content exceeds 60vh */
-    /* margin: 1rem 0; */
     padding: 1rem;
     background: #fafafa;
     border-radius: 4px;
@@ -85,11 +84,11 @@
         <h2>👋 ChefBoost!</h2>
         <div class="window-controls">
           <button type="button" id="minimize-btn">
-            <img src="{{ url_for('static', filename='open-icon.png' ) }}" alt="" class="logo">
+            <img src="{{ url_for('static', filename='minimize-icon.png' ) }}" alt="" class="minimize-icon">
             <span class="visually-hidden">minimize</span>
           </button>
           <button type="button" id="close-btn">
-            <img src="{{ url_for('static', filename='close-icon.png' ) }}" alt="" class="logo">
+            <img src="{{ url_for('static', filename='close-icon.png' ) }}" alt="" class="close-icon">
             <span class="visually-hidden">close</span>
           </button>
         </div>
@@ -103,7 +102,7 @@
 
     <!-- Recipe card template - will be cloned by JavaScript and populated with recipe data -->
     <template id="recipe-card-template">
-      <div class="recipe-card">
+      <article class="recipe-card">
         <div class="recipe-header">
           <h3 class="recipe-title"></h3>
           <div class="recipe-metadata">
@@ -116,10 +115,6 @@
           <div class="recipe-info-panel">
             <h4>Ingredients</h4>
             <div class="recipe-ingredients"></div>
-            <div class="recipe-nutrition">
-              <h4>Nutrition</h4>
-              <div class="nutrition-content"></div>
-            </div>
           </div>
           <div class="recipe-instructions">
             <h4>Instructions</h4>
@@ -127,24 +122,25 @@
           </div>
         </div>
         <div class="recipe-footer">
-          <button class="shopping-list-btn">Shopping List</button>
-          <button class="factoids-btn">Interesting Facts</button>
-          <div class="source-info-toggle">Source Info</div>
+          <!-- <div class="source-info-toggle">Source Info</div> -->
+          <button class="source-info-toggle" aria-expanded="true">Hide Source</button>
         </div>
         <div class="source-info-panel">
           <h4>Source Information</h4>
           <div class="source-content"></div>
         </div>
-      </div>
+      </article>
     </template>
 
     <!-- Message input form and text/recipe view toggle -->
     <section class="message-input-container">
       <form class="message-form" onsubmit="event.preventDefault(); event.stopPropagation(); sendQuery(); return false;">
         <div class="input-wrapper">
+          <label for="query" class="visually-hidden">Ask ChefBoost</label>
           <textarea id="query" placeholder="Ask ChefBoost..." autofocus required></textarea>
           <div class="view-toggle">
             <label class="toggle-switch">
+              <span class="visually-hidden">Toggle switch</span>
               <input type="checkbox" id="view-toggle-checkbox" onclick="window.toggleView(this.checked)">
               <span class="slider"></span>
             </label>
@@ -152,7 +148,7 @@
           </div>
           <button type="submit" id="send-btn"
             onclick="event.preventDefault(); event.stopPropagation(); sendQuery(); return false;">
-            <img src="{{ url_for('static', filename='send-icon.png') }}" alt="Send" class="send-icon">
+            <img src="{{ url_for('static', filename='send-icon.png') }}" alt="" class="send-icon">
             <span class="visually-hidden">Send prompt</span>
           </button>
         </div>
