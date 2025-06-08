@@ -3,12 +3,11 @@
   --primary-color: #FFFFFF;
   --secondary-color: #000000;
   --tertiary-color: #FFA6DE;
-  --message-text: #8D8D8D;
+  --message-text: #545454;
   --message-background: #EDEDED;
   --border-radius: 15px;
   --primary-font-family: "Mulish", sans-serif;
   --secondary-font-family: "Nunito", sans-serif;
-
 }
 
 figure {
@@ -32,11 +31,14 @@ body {
   width: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
 }
 
 a {
   color: inherit;
+}
+
+button:hover {
+  cursor: pointer;
 }
 
 h1 {
@@ -110,19 +112,19 @@ h1 {
   justify-content: center;
 }
 
-.open-close-icons {
+.window-controls {
   display: flex;
   align-items: center;
 }
 
 .chatbot-header button {
   margin: 10px;
-  width: 16px;
   background-color: transparent;
   border: transparent;
 }
 
-.chatbot-header .logo {
+.chatbot-header .minimize-icon,
+.chatbot-header .close-icon {
   width: 16px;
 }
 
