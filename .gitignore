@@ -7,3 +7,4 @@ texts
 __pycache__
 *.bz2
 *.env
+chefboost-env
