@@ -109,7 +109,7 @@ def download_and_store_books(matching_books, vector_store):
 ###############################################################################
 
 ###############################################################################
-# Similiarity Search
+# Similarity Search
 ###############################################################################
 
 def perform_similarity_search(query, vector_store):
