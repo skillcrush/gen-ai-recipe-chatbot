@@ -33,8 +33,6 @@ body {
   width: 100%;
   margin: 0;
   padding: 0;
-  /* ? Is this the issue? Yes, this was the issue :) */
-  /* overflow: hidden; */
 }
 
 a {
@@ -96,7 +94,6 @@ h1 {
 .site-header .logo {
   height: 35px;
   line-height: 0;
-  /* ? Reduced from 50px to 35px for mobile */
   margin: 30px 0 10px 0;
 }
 
@@ -147,8 +144,6 @@ main {
   background: url('joanie-simon-2r8BzVYZIeo-unsplash.png'), #f5e4f0;
   background-size: cover;
   background-position: center;
-  /* ? Increased from 50px to 140px for mobile */
-  height: calc(100vh - 140px);
   height: calc(100vh - 50px);
 }
 
@@ -158,13 +153,10 @@ main {
   height: 70vh;
   /* Allow scrolling within this container */
   overflow: auto;
-  /* ? If others don't work, try changing to align-items: flex-start; Maybe mobile only */
-  align-items: center;
   align-items: flex-start;
   justify-content: center;
   width: 95%;
   max-width: 1400px;
-  /* ? Maybe */
   margin-bottom: 50px;
 }
 
@@ -184,7 +176,6 @@ main {
   min-height: 400px;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  /* ? remove for mobile */
   height: 70vh;
   background-color: white;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -215,7 +206,6 @@ main {
 
 .chatbot-header button {
   margin: 10px;
-  /* * Removed 16px of margin */
   background-color: transparent;
   border: transparent;
 }
@@ -609,7 +599,6 @@ input:checked+.slider:before {
   align-items: center;
   background-color: var(--tertiary-color);
   border: none;
-  /* ? space between button and login links */
   margin-bottom: 16px;
   border-radius: 20px;
   padding: 8px 16px;
@@ -997,14 +986,7 @@ body.text-view-mode .assistant-message .markdown-text {
     width: 65%;
   }
 
-  main {
-    /* ? changed from 150px to 50px for larger screens */
-    height: calc(100vh - 50px);
-  }
-
   .chat-container {
-    /* ? moved from mobile to here */
-    height: 70vh;
     max-width: 90%;
   }
 
