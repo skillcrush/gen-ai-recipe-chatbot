@@ -1,6 +1,6 @@
 # Test Suite
 
-This directory contains tests for the GARC application, focusing on multi-query retrieval and hybrid search functionality as implemented in the `07-query-translation` branch.
+This directory contains tests for the GARC application, focusing on multi-query retrieval and hybrid search functionality as implemented in the `c3l7-query-translation` branch.
 
 ## Test Files
 
