@@ -147,7 +147,7 @@ def create_books_retrieval_qa_tool():
     @tool
     def get_books_retrieval_qa(input: str) -> str:
         """
-        Tool for short Q&A over the 'books' corpus using retrieval QA.
+        Tool for short Q&A over the 'books' corpus using retrieval QA. 
         """
         query = input.strip()
         chain_result = perform_books_retrieval_qa(query, chat_llm, books_vector_store)
@@ -205,13 +205,13 @@ def create_recipes_multi_query_tool():
 # Routes
 # Index route
 @app.route("/", methods=["GET"])
-# @login_required - Temporarily disabled for testing
+@login_required
 def index():
     return render_template("index.html")  # Serve the chat interface
 
-# Stream route with database tools
+# Stream route
 @app.route("/stream", methods=["GET"])
-# @login_required - Temporarily disabled for testing
+@login_required
 def stream():
     log.info(f"Stream request received with query: {request.args.get('query', '')}")
     
@@ -293,7 +293,6 @@ Date: 04/06/2025"""
             ],
             checkpointer=memory,
             # TODO: Add a system message prompt for the ReAct agent
-            prompt=system_message_content,
             debug=True
         )
         log.info("Agent graph created successfully")
@@ -321,9 +320,10 @@ Date: 04/06/2025"""
             stream_iterator = graph.stream(inputs, config, stream_mode="messages")
             
             last_sent_time = time.time()
+
+            current_node = None
             current_output = ""
             
-            # Process messages from the stream
             while True:
                 # Check if we've been idle too long
                 if time.time() - last_sent_time > HEARTBEAT_INTERVAL:
@@ -348,27 +348,34 @@ Date: 04/06/2025"""
                 
                 # Update timestamp to prevent heartbeats during active streaming
                 last_sent_time = time.time()
-                
-                # Skip user messages
+
+                node = metadata.get("langgraph_node")
+                # If we detect a change in the node, assume previous output was intermediate.
+                if current_node is None:
+                    current_node = node
+                elif node != current_node:
+                    current_node = node
+                    current_output = ""  # reset accumulator for new node
+            
+        #         # Skip user messages
                 if hasattr(msg, 'type') and msg.type == 'human':
                     log.info("Skipping user message")
                     continue
-                
+
                 # Process message content if available
                 if hasattr(msg, 'content') and msg.content:
                     # Skip echoes of the user's query
                     if msg.content.lower() == query.lower():
                         log.info("Skipping echo of user query")
                         continue
-                        
                     log.info(f"Message content: {msg.content[:100]}...")
                     current_output += msg.content
-                
+        
                 # Break on finish signal
                 if metadata.get("finish_reason") == "stop":
                     log.info("Received final message with stop reason")
                     break
-            
+
             # Send the accumulated response
             log.info(f"Sending full response with length {len(current_output)}")
             yield f"data: {json.dumps(current_output)}\n\n"
@@ -376,22 +383,20 @@ Date: 04/06/2025"""
             # Final marker
             log.info("Sending DONE marker")
             yield f"data: {json.dumps('[DONE]')}\n\n"
-        
+                  
         except GeneratorExit:
             # Client disconnected, log it but don't return anything
             log.info("Client disconnected, generator exited.")
             return
-        
+          
         except Exception as e:
             # Catch any other exceptions
             log.error(f"Unexpected error in stream: {str(e)}")
             yield f"data: {json.dumps(f'Error in stream: {str(e)}')}\n\n"
             yield f"data: {json.dumps('[DONE]')}\n\n"
 
-    return Response(
-        generate(),
-        content_type="text/event-stream"
-    )
+    return Response(generate(), content_type="text/event-stream")
+
 
 # Sign up route
 @app.route("/signup", methods=["GET", "POST"])
