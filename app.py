@@ -41,11 +41,11 @@ from gutenberg.recipes_storage_and_retrieval_v2 import (
 # Load environment variables from a .env file
 load_dotenv(override=True)
 
-# Set up logging to stream to console only (GAE doesn't allow file writing)
+# * Set up logging to stream to console only (GAE doesn't allow file writing)
 log = logging.getLogger("assistant")
 log.setLevel(logging.INFO)
 
-# Log to console for debugging
+# * Log to console for debugging
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 log.addHandler(console_handler)
@@ -72,7 +72,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Temporarily disable login for testing
+# * Temporarily disable login for testing. Comment out in production!
 app.config['LOGIN_DISABLED'] = True
 
 # User model
@@ -201,12 +201,14 @@ def create_recipes_multi_query_tool():
 # Routes
 # Index route
 @app.route("/", methods=["GET"])
+#* Re-enable login_required in production
 # @login_required - Temporarily disabled for testing
 def index():
     return render_template("index.html")  # Serve the chat interface
 
 # Stream route with database tools
 @app.route("/stream", methods=["GET"])
+#* Re-enable login_required in production
 # @login_required - Temporarily disabled for testing
 def stream():
     log.info(f"Stream request received with query: {request.args.get('query', '')}")
@@ -240,13 +242,13 @@ When providing recipes, format them in this exact structured way:
 2. Then add "Recipe Type: [Type]" where type is one of: dessert, appetizer, main course, soup, salad, beverage, breakfast, side dish
 3. Then add "Cuisine: [Cuisine]" where cuisine is the origin (e.g., Italian, French, Thai, etc.)
 4. Then add "Special Considerations: [Any dietary notes]" for allergies or diets (e.g., vegetarian, gluten-free, dairy-free)
-5. Then "Ingredients:" followed by a bulleted list (use - for bullets)
+5. Then "Ingredients:" followed by a bulleted list (use - for bullets) Always include the amount of each ingredient used in the recipe
 6. Add "Instructions:" followed by numbered steps (use 1. 2. 3. etc.)
 7. ALWAYS add "Source: [Source]" with either the source of the recipe or "ChefBoost AI" if created by you
 8. ALWAYS add "Date: [Date]" with the current date
 
 Important: 
-- DO NOT use markdown formatting like bold (** **), just use plain text
+- DO NOT use markdown formatting like bold (** **) or respond with JSON, just use plain text when providing the recipe
 - ALWAYS use the exact headings shown above with colons (:)
 - When multiple recipes are requested, create separate recipes with Title: at the start of each
 - Keep each recipe complete with ALL fields
@@ -316,6 +318,8 @@ Date: 04/06/2025"""
             stream_iterator = graph.stream(inputs, config, stream_mode="messages")
             
             last_sent_time = time.time()
+
+            current_node = None
             current_output = ""
             
             # Process messages from the stream
@@ -343,27 +347,34 @@ Date: 04/06/2025"""
                 
                 # Update timestamp to prevent heartbeats during active streaming
                 last_sent_time = time.time()
-                
-                # Skip user messages
+
+                node = metadata.get("langgraph_node")
+                # If we detect a change in the node, assume previous output was intermediate.
+                if current_node is None:
+                    current_node = node
+                elif node != current_node:
+                    current_node = node
+                    current_output = ""  # reset accumulator for new node
+            
+        #         # Skip user messages
                 if hasattr(msg, 'type') and msg.type == 'human':
                     log.info("Skipping user message")
                     continue
-                
+
                 # Process message content if available
                 if hasattr(msg, 'content') and msg.content:
                     # Skip echoes of the user's query
                     if msg.content.lower() == query.lower():
                         log.info("Skipping echo of user query")
                         continue
-                        
                     log.info(f"Message content: {msg.content[:100]}...")
                     current_output += msg.content
-                
+        
                 # Break on finish signal
                 if metadata.get("finish_reason") == "stop":
                     log.info("Received final message with stop reason")
                     break
-            
+
             # Send the accumulated response
             log.info(f"Sending full response with length {len(current_output)}")
             yield f"data: {json.dumps(current_output)}\n\n"
@@ -371,22 +382,20 @@ Date: 04/06/2025"""
             # Final marker
             log.info("Sending DONE marker")
             yield f"data: {json.dumps('[DONE]')}\n\n"
-        
+                  
         except GeneratorExit:
             # Client disconnected, log it but don't return anything
             log.info("Client disconnected, generator exited.")
             return
-        
+          
         except Exception as e:
             # Catch any other exceptions
             log.error(f"Unexpected error in stream: {str(e)}")
             yield f"data: {json.dumps(f'Error in stream: {str(e)}')}\n\n"
             yield f"data: {json.dumps('[DONE]')}\n\n"
 
-    return Response(
-        generate(),
-        content_type="text/event-stream"
-    )
+    return Response(generate(), content_type="text/event-stream")
+
 
 # Sign up route
 @app.route("/signup", methods=["GET", "POST"])
@@ -468,7 +477,7 @@ def log_run(run_status):
     if run_status in ["cancelled", "failed", "expired"]:
         log.error(str(datetime.datetime.now()) + " Run " + run_status)
 
-# Add CORS headers to all responses
+# * Add CORS headers to all responses. This code snippet serves to enable Cross-Origin Resource Sharing (CORS) in the Flask application, allowing web pages from different domains to make requests to the API. Without it, web browsers would block requests to the API due to same-origin policy restrictions.
 @app.after_request
 def add_cors_headers(response):
     response.headers['Access-Control-Allow-Origin'] = '*'  # Allow all origins
