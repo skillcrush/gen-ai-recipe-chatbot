@@ -125,7 +125,6 @@ memory = MemorySaver()
 ####################################################################
 # Similarity Search (Books)
 ####################################################################
-# * Update tool description for books if no ingredient quantities and units: Data include recipe ingredient quantities and units.
 def create_books_similarity_search_tool():
     @tool
     def get_books_similarity_search(input: str) -> str:
@@ -144,7 +143,6 @@ def create_books_similarity_search_tool():
 ####################################################################
 # Retrieval QA (Books)
 ####################################################################
-# * Update tool description for books if no ingredient quantities and units: Data include recipe ingredient quantities and units.
 def create_books_retrieval_qa_tool():
     @tool
     def get_books_retrieval_qa(input: str) -> str:
@@ -212,7 +210,6 @@ def index():
     return render_template("index.html")  # Serve the chat interface
 
 # Stream route
-# * Began with working code. Attempting to edit out as much duplication as possible and leave clean code
 @app.route("/stream", methods=["GET"])
 @login_required
 def stream():
