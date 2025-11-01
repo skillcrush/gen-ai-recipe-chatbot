@@ -18,7 +18,6 @@ from supabase.client import ClientOptions
 # LangChain imports
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import SupabaseVectorStore
-# TODO: Import SystemMessage and HumanMessage from langchain_core.messages
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from langchain.agents import tool
